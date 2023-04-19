@@ -50,9 +50,11 @@ library(DMwR2)
 library(car)
 library(factoextra)
 library(rfUtilities)
+library(LICORS)
+library(PCAmixdata)
 
 ## read the dataset
-df <- read.csv("/Users/lloydcheng/Desktop/UT-Austin/2023_Spring_Semester/Data_Mining/Final_Project/internal_control_data.csv",
+df <- read.csv("https://raw.githubusercontent.com/haokunz/Data_mining_project/main/data/internal_controls_data_1680556746.csv",
                header = TRUE)
 ## delete copyright and lines of notes
 df <- df[-c(nrow(df), nrow(df)-1), ]
@@ -101,6 +103,18 @@ df3$big_four_indicator <- ifelse(df3$auditor_key <= 4, 1, 0)
 df3$five_category <- ifelse(df3$auditor_key < 5, df3$auditor_key, 5)
 df3$audit_percent <- df3$audit_fees / df3$total_fees
 
+## add region indicator and remove specific location indicators
+df3$US_West <- as.factor(ifelse(df3$state_region == "US West", 1, 0))
+df3$US_Midwest <- as.factor(ifelse(df3$state_region == "US Midwest", 1, 0))
+df3$US_Southeast <- as.factor(ifelse(df3$state_region == "US Southeast", 1, 0))
+df3$US_New_England <- as.factor(ifelse(df3$state_region == "US New England", 1, 0))
+df3$Canada <- as.factor(ifelse(df3$state_region == "Canada", 1, 0))
+df3$Foreign <- as.factor(ifelse(df3$state_region == "Foreign", 1, 0))
+df3$US_MAtlan <- as.factor(ifelse(df3$state_region == "US Mid Atlantic", 1, 0))
+df3$US_Southwest <- as.factor(ifelse(df3$state_region == "US Southwest", 1, 0))
+df3 <- df3 %>%
+  select(-c("state_region", "state_code", "city", "state_name"))
+
 ## add transformation variables to the data
 df3$audit_fees_bc <- predict(BoxCoxTrans(df3$audit_fees), df3$audit_fees)
 non_audit_bc <- predict(BoxCoxTrans(df3$non_audit_fees[df3$non_audit_fees!=0]),
@@ -121,6 +135,7 @@ df3$earnings_trans <- (earnings_0/abs(earnings_0)) * log(abs(df3$earnings) + 1)
 df3$big_4_factor <- as.factor(df3$big_four_indicator)
 df3$five_category_factor <- as.factor(df3$five_category)
 df3$state_region <- as.factor(df3$state_region)
+df3$auditor_key <- as.factor(df3$auditor_key)
 
 
 # Step 3. Data visualization(EDA - Exploratory Data Analysis) 
@@ -192,19 +207,51 @@ dp + theme_classic()
 
 
 # Step 4. Unsupervised learning: Use PCAmix and K-means++ clustering to do the company segmentation
+df3$effective_internal_controls_factor = as.factor(ifelse(df3$effective_internal_controls == "No", 0, 1))
+
+X.quanti <- splitmix(df3)$X.quanti %>% scale()
+X.quali <- splitmix(df3)$X.quali
+df3_pca <- PCAmix(X.quanti, X.quali, ndim=4, rename.level = TRUE, graph=FALSE)
+
+df3_pca_scores = df3_pca$ind$coord %>% as.data.frame()
+
+# append 4 pc to df3
+df3$PC1 <- df3_pca_scores$`dim 1`
+df3$PC2 <- df3_pca_scores$`dim 2`
+df3$PC3 <- df3_pca_scores$`dim 3`
+df3$PC4 <- df3_pca_scores$`dim 4`
 
 
+# KClustering
+## Choose optimal K - CH index
+k_grid = seq(2, 6, by=1)
+set.seed(8964)
+df_CH_grid = foreach(k=k_grid, .combine='rbind') %do% {
+  cluster_k = kmeanspp(df3_pca_scores, k, nstart = 50)
+  W = cluster_k$tot.withinss
+  B = cluster_k$betweenss
+  # Use Calinski-Harabasz index to determine K
+  # The  higher the better 
+  CH = (B/W)*((nrow(df3_pca_scores)-k)/(k-1)) 
+  c(k=k, stat = CH)
+} %>% as.data.frame()
 
+df_kmpp = kmeanspp(df3_pca_scores, k=5, nstart=25)
+df3$cluster = df_kmpp$cluster 
 
-
-
-
-
-
-
-
-
-
+## Analysis
+### Find out significant differences among groups
+### Ans:  CH index suggests that optimal k = 5
+# group 1+4 vs. 5
+clus1 = ggplot(df3) +
+  geom_point(aes(x=df3$market_cap_bc, y=df3$audit_fees_bc, color=factor(cluster))) +
+  labs(color='Cluster')
+# group 2: low conversion, high count details
+clus2 = ggplot(df3) +
+  geom_point(aes(x=df3$big_four_indicator, y=df3$audit_fees_bc, color=factor(cluster))) +
+  labs(color='Cluster')
+ggarrange(clus1, clus2, common.legend = TRUE,
+          legend = "bottom")
 # Step 5. Modeling: Linear regression, knn, Regression tree: random forest, CART, Boosting
 
 ### Base model: Linear regression(Bid model)
