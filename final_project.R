@@ -217,24 +217,25 @@ df_CH_grid = foreach(k=k_grid, .combine='rbind') %do% {
   cluster_k = kmeanspp(df3_pca_scores, k, nstart = 50)
   W = cluster_k$tot.withinss
   B = cluster_k$betweenss
-  CH = (B/W)*((nrow(df3_pca_scores)-k)/(k-1))
+  # Use Calinski-Harabasz index to determine K
+  # The  higher the better 
+  CH = (B/W)*((nrow(df3_pca_scores)-k)/(k-1)) 
   c(k=k, stat = CH)
 } %>% as.data.frame()
 
-df_kmpp = kmeanspp(df3_pca_scores, k=3, nstart=25)
+df_kmpp = kmeanspp(df3_pca_scores, k=5, nstart=25)
 df3$cluster = df_kmpp$cluster 
 
 ## Analysis
 ### Find out significant differences among groups
-### Ans: although CH index suggests that optimal k = 4, but we can only
-### find meaningful clustering with k = 3 instead of 4
-# group 1+4 vs. 3
+### Ans:  CH index suggests that optimal k = 5
+# group 1+4 vs. 5
 clus1 = ggplot(df3) +
-  geom_point(aes(x=counts_profileVisits, y=conversion, color=factor(cluster))) +
+  geom_point(aes(x=df3$market_cap_bc, y=df3$audit_fees_bc, color=factor(cluster))) +
   labs(color='Cluster')
 # group 2: low conversion, high count details
-clus2 = ggplot(lovoo_data) +
-  geom_point(aes(x=countDetails, y=conversion, color=factor(cluster))) +
+clus2 = ggplot(df3) +
+  geom_point(aes(x=df3$assets_log, y=df3$audit_fees_bc, color=factor(cluster))) +
   labs(color='Cluster')
 ggarrange(clus1, clus2, common.legend = TRUE,
           legend = "bottom")
