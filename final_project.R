@@ -3,9 +3,9 @@
 ### 2. Data wrangling(Completed)
 ### 3. Data Visualization(EDA - Exploratory Data Analysis) 
 ### 4. Unsupervised learning: Use PCAmix and K-means++ clustering to do the company segmentation? Like 繼鵬他們做的)
-### 5. Choose the model(Supervised learning): 
+### Then choose the model(Supervised learning): 
 ###     Linear regression, knn, Regression tree: random forest, CART, Boosting & Lasso regression
-### 學繼鵬：用lasso 和Random Forest兩個model，找出會影響audit fee的因素有哪些
+### 5. 學繼鵬：用lasso 和Random Forest兩個model，找出會影響audit fee的因素有哪些
 ### 6. Model training: Split to Training set & Testing set,  do the K-fold Cross-Validation
 ### 7. Assess the model performance: k-fold cv, MSE, R-square, F-1 score(the chart of actual and  predicted)
 ### ( Choose the best performance model，use it to do the prediction，並且將結果圖表化？ Partial dependence plots etc)
@@ -26,7 +26,8 @@
 ### 2. Model是要用來找出variable的重要性的嗎？ 繼鵬好像是用lasso 找出重要的 independent variable
 ### 繼鵬他們沒有用模型進行預測，只是針對數據分析結果做出解釋，提出哪些因素對acquire more kisses on dating app有影響
 ### 如果要學繼鵬他們，就是提出哪些因素對acquire more kisses有影響
-
+### Step 5. : 像company name, city 這種變數該怎麼處理
+### Step 6. Problem: lm, knn, lasso 的k-fold CV怎麼做
 
 
 
@@ -36,6 +37,8 @@
 library(tidyverse)
 library(ggplot2)
 library(rsample)
+library(mosaic)
+library(cluster)
 library(modelr)
 library(randomForest)
 library(caret)
@@ -52,9 +55,12 @@ library(factoextra)
 library(rfUtilities)
 library(LICORS)
 library(PCAmixdata)
+library(ggpubr)
+library(foreach)
+library(dplyr)
 
 ## read the dataset
-df <- read.csv("https://raw.githubusercontent.com/haokunz/Data_mining_project/main/data/internal_controls_data_1680556746.csv",
+df <- read.csv("https://raw.githubusercontent.com/haokunz/Data_mining_project/main/data/internal_controls_data.csv",
                header = TRUE)
 ## delete copyright and lines of notes
 df <- df[-c(nrow(df), nrow(df)-1), ]
@@ -97,6 +103,8 @@ df3$revenue = as.numeric(gsub(",", "", df3$revenue))
 df3$earnings = as.numeric(gsub(",", "", df3$earnings))
 df3$book_value = as.numeric(gsub(",", "", df3$book_value))
 df3$assets = as.numeric(gsub(",", "", df3$assets))
+df3$assets = as.numeric(as.factor(df3$effective_internal_controls))
+df3$effective_internal_controls_factor = as.factor(ifelse(df3$effective_internal_controls == "No", 0, 1))
 
 ## add indicator for analysis
 df3$big_four_indicator <- ifelse(df3$auditor_key <= 4, 1, 0)
@@ -137,7 +145,6 @@ df3$five_category_factor <- as.factor(df3$five_category)
 df3$state_region <- as.factor(df3$state_region)
 df3$auditor_key <- as.factor(df3$auditor_key)
 
-
 # Step 3. Data visualization(EDA - Exploratory Data Analysis) 
 ### Add the explanation for the chart
 # basic plots, preliminary exploration #
@@ -150,7 +157,7 @@ par(mar = c(5.1, 6.5, 4.1, 2.1))
 barplot(height=company_numbers,
         names.arg=c("Canada", "US_NewEng", "US_Southwest", "US_Southeast",
                     "US_Midwest", "Foreign", "US_MAtlan", "US_West"),
-        col="#69b3a2", horiz=TRUE, las = 1, main = "Num. of Companies", xlab = "numbers")
+        col="#69b3a2", horiz=TRUE, las = 1, main = "Number of Companies", xlab = "numbers")
 par(mar = c(5.1, 4.1, 4.1, 2.1))
 
 # use eight plots to display the effect of transformation on fee related variables
@@ -164,6 +171,7 @@ hist(df3$total_fees_bc, main="total fees (transformed)", xlab="Total fees")
 hist(df3$market_cap, breaks="Scott", main="Market cap", xlab="Market cap")
 hist(df3$market_cap_bc, main="Market cap (transformed)", xlab="Market cap")
 par(mfrow = c(1, 1))
+## 
 
 # use three plots to display the categorical data
 par(mfrow = c(1, 3))
@@ -252,36 +260,88 @@ clus2 = ggplot(df3) +
   labs(color='Cluster')
 ggarrange(clus1, clus2, common.legend = TRUE,
           legend = "bottom")
-# Step 5. Modeling: Linear regression, knn, Regression tree: random forest, CART, Boosting
 
-### Base model: Linear regression(Bid model)
+
+
+
+
+
+# Step 5. 用lasso 和Random Forest兩個model，找出會影響audit fee的因素有哪些
+## for gamlr, and many other fitting functions,
+## We need to create the specific numeric feature matrix.
+auditx = model.matrix(audit_fees ~ .-1, data=df3_train)
+audity = df3$audit_fee
+auditfee_cvl = cv.gamlr(auditx, audity, nfold = 10, standardize = FALSE, family = "poisson")
+
+### Cross-validated LASSO
+beta_hat=coef(auditfee_cvl)
+beta_hat
+
+
+# imoute the n.a. value
+imputeaudit <- knnImputation(df3, k = 100, scale = T, meth = "median", distData = NULL)
+### Random Forest
+df3_split = initial_split(df3, prop = 0.7)
+df3_train = training(df3_split)
+df3_test = testing(df3_split)
+
+
+
+auditfee_rforest = randomForest(audit_fees ~ . - company - city - state_code - state_region 
+                                - auditor - auditor_state_name,
+                                  data = df3_train, importance = True)
+##### Earning 有na值，so we can't run the Random Forest
+plot(auditfee_rforest)
+
+
+
+
+
+
+
+
+# Step 6. Model training: Linear regression, knn, Regression tree: random forest, CART, Boosting
+### Problem: 像company name, city 這種變數該怎麼處理
+# Split the dataset to training set & testing set
+df3_split = initial_split(df3, prop = 0.7)
+df3_train = training(df3_split)
+df3_test = testing(df3_split)
+
+### Base model: Linear regression(Base model)
 ## Syntax: lm3 = lm(price ~ (. - pctCollege - sewer - waterfront - landValue - newConstruction)^2, data=saratoga_train)
-
+auditfee_lm = lm(audit_fees ~ . - company - city - state_code - state_region 
+                 - auditor - auditor_state_name, data = df3_train)
 
 ### Model 2: KNN
 ## Syntax: KNN with K = 70
 ## knn100 = knnreg(COAST ~ KHOU, data=loadhou_train, k=100)
 ### modelr::rmse(knn100, loadhou_test)
 ## predict(knn100, loadhou_test)
-
+auditfee_knn = knnreg(audit_fees ~ . - company - city - state_code - state_region 
+                      - auditor - auditor_state_name , data = df3_train)
 
 ### Model 3 to 5 are belong to regression trees
 ### Syntax in Exercise3 Q2
 ### Model 3: Random Forest model
 ## Syntax: rforest_dengue = randomForest(total_cases ~ .,data = dengue_training, importance=TRUE)
 ## Performance: Use rmse. Syntax: rmse(gbm_dengue, dengue_testing)
+auditfee_rforest = randomForest(audit_fees ~  - company - city - state_code - state_region 
+                                - auditor - auditor_state_name. data = df3_train, importance = True)
 
 ### Model 4: CART model 
 ## Syntax: cart_dengue = rpart(total_cases ~ . , data = dengue_training, control = rpart.control(cp = 0.002, minsplit=20))
 ## Split only if we have at least 20 obs in a node,
 ## and the split improves the fit by a factor of 0.002 aka 0.2%
 ## Performance: Use rmse. Syntax: rmse(gbm_dengue, dengue_testing)
+auditfee_cart = rpart(audit_fees ~ .  - company - city - state_code - state_region 
+                      - auditor - auditor_state_name, data = df3_train, control = rpart.control(cp = 0.002, minsplit = 20))
 
 ### Model 5: Gradient-boosted model
 ## in the "capmetro.R"
 ## Syntax: gbm_dengue = gbm(total_cases ~ ., data = dengue_training, interaction.depth=4, n.trees=500, shrinkage=.05)
 ## Performance: Use rmse. Syntax: rmse(gbm_dengue, dengue_testing)
-
+auditfee_gbm = gbm(audit_fees ~ .  - company - city - state_code - state_region 
+                   - auditor - auditor_state_name, data = df3_train, interaction.depth = 4, n.trees = 500, shrinkage = .05)
 
 ### Model 6: Lasso regression
 ### Use lasso to find the important variables?
@@ -290,26 +350,57 @@ ggarrange(clus1, clus2, common.legend = TRUE,
 ## Syntax for Lasso: 
 ### lasso_selected = glm(children ~ (.-arrival_date-deposit_type) + hotel:reserved_room_type+ meal:is_repeated_guest+ adults:previous_bookings_not_canceled+ meal:previous_bookings_not_canceled+ market_segment:customer_type+is_repeated_guest:assigned_room_type+ assigned_room_type:required_car_parking_spaces, data = hotels_dev_train, family = "binomial")
 
+# for gamlr, and many other fitting functions,
+# we need to create specific numeric feature matrix for it.
+auditx = model.matrix(audit_fees ~ .-1, data=df3_train)
+audity = df3$audit_fee
+# Without the AIC approximation: CV Lasso
+# Syntax: lvcvl1 = cv.gamlr(lvx, lvy, nfold=10, standardize=FALSE,family="poisson"
+auditfee_cvl = cv.gamlr(auditx, audity, nfold = 10, standardize = FALSE, family = "poisson")
+## error: nrow(x) == n is not TRUE
+## may bc of the y is not a numeric/ factor vector, but a dataframe
+## maybe solve the problem "像company name, city 這種變數該怎麼處理", we can figure out this
 
 
-
-
-
-
-
-# Step 6. 訓練模型: Split to Training set & Testing set, 做K-fold Cross-Validation
-## Split to Training set & Testing set
-### Syntax:
-### hotels_dev_split = initial_split(hotels_dev, prop = 0.7)
-### hotels_dev_train = training(hotels_dev_split)
-### hotels_dev_test = testing(hotels_dev_split)
 
 
 ### Step 7. 評價模型: K-fold Cross-validation
+## Problem: lm, knn, lasso 的k-fold CV怎麼做
 ## K-fold Cross-validation: (k-1) is training set, 1 is testing set
 ## 從沒當過testing set的 dataset中挑一個來做testing set, 剛剛做過testing set 的那份則加回去做training set
 ## repeat the step until every set 都當過testing set ## 會執行k次, 得到k個 validation error
 ## Average the k validation error, then we can know which model is better
+
+## evaluate the performance of the models by k-folds
+## perform cross-validation
+set.seed(100)
+k = 5 
+cart_cv <- rpart.control(cp = 0.01)
+rf_cv <- list(mtry = sqrt(ncol(df3_train)), replace = TRUE)
+gb_cv <- list(n.trees = 1000, interaction.depth = 4, shrinkage = 0.01, cv.folds = k)
+
+cart_cv_results <- rpart(audit_fees ~ ., data = df3_train, control = cart_cv)
+rf_cv_results <- randomForest(audit_fees ~ ., data = df3_train, mtry = rf_cv$mtry, replace = rf_cv$replace)
+gb_cv_results <- gbm(audit_fees ~ ., data = df3_train, n.trees = gb_cv$n.trees, interaction.depth = gb_cv$interaction.depth, shrinkage = gb_cv$shrinkage, cv.folds = gb_cv$cv.folds, verbose = FALSE)
+
+# Evaluate the performance of each model
+cart_performance <- predict(cart_cv_results, newdata = df3_test)
+rf_performance <- predict(rf_cv_results, newdata = df3_test)
+gb_performance <- predict(gb_cv_results, newdata = df3_test, n.trees = gb_cv$n.trees)
+
+
+# Compare the performance of each model by measuring MSE
+cart_accuracy <- mean((cart_performance - df3_test$audit_fees)^2)
+rf_accuracy <- mean((rf_performance - df3_test$audit_fees)^2)
+gb_accuracy <- mean((gb_performance - df3_test$audit_fees)^2)
+
+# print out the MSE of each model to console, the lower the better the model is 
+cat("CART accuracy:", cart_accuracy, "\n")
+cat("Random Forest accuracy:", rf_accuracy, "\n")
+cat("Gradient Boosting accuracy:", gb_accuracy, "\n") 
+# We will know that which model has the lowest MSE
+
+
 
 ### Syntax:
 #### set.seed(123)
