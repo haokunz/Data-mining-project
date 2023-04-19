@@ -1,0 +1,218 @@
+# doing the analysis on the internal control database
+# 4.3.2023
+
+library(ggplot2)
+library(caret)
+library(car)
+library(factoextra)
+library(randomForest)
+library(rfUtilities)
+library(rsample)
+df <- read.csv("C:/Users/Haokun Zhang/Documents/WeChat Files/wxid_ui2wiqt4hawp22/FileStorage/File/2023-04/internal-controls-data-1680556746.csv",
+               header = TRUE)
+
+# delete copyright and lines of notes
+df <- df[-c(nrow(df), nrow(df)-1), ]
+
+# remove records with restated internal control report
+duplicated_indexes <- which(df$Restated.Internal.Control.Report == "Yes (1)")
+duplicated_companies <- unique(df$Company[duplicated_indexes])
+restate_indexes <- which(df$Company %in% duplicated_companies)
+remove_index <- setdiff(restate_indexes, duplicated_indexes)
+df1 <- df[-remove_index, ]
+
+# remove duplicated records from different auditors working at the same time
+multi_auditors <- table(df1$Company)[table(df1$Company) >= 2]
+remove_index_2 <- setdiff(which(df1$Company %in% names(multi_auditors)), match(names(multi_auditors), df1$Company))
+df2 <- df1[-remove_index_2, ]
+
+# remove rows with missing revenue data
+df2 <- df2[df2$Revenue.... != "", ]
+
+# select target columns
+df3 <- df2[ ,c("Company", "City", "State.Code", "State.Name", "State.Region", 
+               "Auditor", "Auditor.Key", "Auditor.State.Name", 
+               "Effective.Internal.Controls", "Audit.Fees....", "Non.Audit.Fees....",
+               "Total.Fees....", "Share.Price", "Market.Cap....", "Revenue....",
+               "Earnings....", "Book.Value....", "Assets....")]
+
+# change column names to mark the targets
+colnames(df3) <- c("company", "city", "state_code", "state_name", "state_region",
+                   "auditor", "auditor_key", "auditor_state_name", 
+                   "effective_internal_controls", "audit_fees", "non_audit_fees",
+                   "total_fees", "share_price", "market_cap","revenue",
+                   "earnings", "book_value", "assets")
+
+# convert money amount character into numeric
+df3$audit_fees = as.numeric(gsub(",", "", df3$audit_fees))
+df3$non_audit_fees = as.numeric(gsub(",", "", df3$non_audit_fees))
+df3$total_fees = as.numeric(gsub(",", "", df3$total_fees))
+df3$market_cap = as.numeric(gsub(",", "", df3$market_cap))
+df3$revenue = as.numeric(gsub(",", "", df3$revenue))
+df3$earnings = as.numeric(gsub(",", "", df3$earnings))
+df3$book_value = as.numeric(gsub(",", "", df3$book_value))
+df3$assets = as.numeric(gsub(",", "", df3$assets))
+
+# add indicator for analysis
+df3$big_four_indicator <- ifelse(df3$auditor_key <= 4, 1, 0)
+df3$five_category <- ifelse(df3$auditor_key < 5, df3$auditor_key, 5)
+df3$audit_percent <- df3$audit_fees / df3$total_fees
+
+# add transformation variables to the data
+df3$audit_fees_bc <- predict(BoxCoxTrans(df3$audit_fees), df3$audit_fees)
+non_audit_bc <- predict(BoxCoxTrans(df3$non_audit_fees[df3$non_audit_fees!=0]),
+                        df3$non_audit_fees[df3$non_audit_fees!=0])
+df3$total_fees_bc <- predict(BoxCoxTrans(df3$total_fees), df3$total_fees)
+df3$market_cap_bc <- predict(BoxCoxTrans(df3$market_cap), df3$market_cap)
+df3$market_fee_ratio <- log(df3$market_cap/ df3$total_fees)
+df3$assets_log <- log(df3$assets)
+
+revenue_0 = jitter(df3$revenue)
+df3$revenue_trans <- (revenue_0/abs(revenue_0)) * log(abs(df3$revenue) + 1)
+
+earnings_0 = jitter(df3$earnings)
+df3$earnings_trans <- (earnings_0/abs(earnings_0)) * log(abs(df3$earnings) + 1)
+
+# preliminary test on big_four_indicator,chang coloums to factor
+df3$big_4_factor <- as.factor(df3$big_four_indicator)
+df3$five_category_factor <- as.factor(df3$five_category)
+df3$state_region <- as.factor(df3$state_region)
+
+########################################
+# basic plots, preliminary exploration #
+########################################
+
+# plot the number distribution of companies in different regions
+company_numbers <- sort(table(df3$state_region[df3$state_region != ""]), decreasing = FALSE, na.last = NA)
+
+par(mar = c(5.1, 6.5, 4.1, 2.1))
+barplot(height=company_numbers,
+        names.arg=c("Canada", "US_NewEng", "US_Southwest", "US_Southeast",
+                    "US_Midwest", "Foreign", "US_MAtlan", "US_West"),
+        col="#69b3a2", horiz=TRUE, las = 1, main = "Num. of Companies", xlab = "numbers")
+par(mar = c(5.1, 4.1, 4.1, 2.1))
+
+# use eight plots to display the effect of transformation on fee related variables
+par(mfrow = c(2, 4))
+hist(df3$audit_fees, breaks="Scott", main="audit fees", xlab="Audit fees")
+hist(df3$audit_fees_bc, main="audit fees (transformed)", xlab="Audit fees")
+hist(df3$non_audit_fees, breaks="Scott", main="non audit fees", xlab="Non-audit fees")
+hist(non_audit_bc, main="non audit fees (transformed)", xlab="Non-audit fees")
+hist(df3$total_fees, breaks="Scott", main="total fees", xlab="Total fees")
+hist(df3$total_fees_bc, main="total fees (transformed)", xlab="Total fees")
+hist(df3$market_cap, breaks="Scott", main="Market cap", xlab="Market cap")
+hist(df3$market_cap_bc, main="Market cap (transformed)", xlab="Market cap")
+par(mfrow = c(1, 1))
+
+# use three plots to display the categorical data
+par(mfrow = c(1, 3))
+barplot(table(df3$five_category_factor), ylab = "Frequency", main="Auditing company distribution")
+barplot(table(df3$big_4_factor), yaxt='n', ylab="Frequency", main="Num. big4 vs. other")
+axis(side=2, at=seq(0, nrow(df3), 200))
+barplot(table(df3$effective_internal_controls), yaxt='n', ylab="Frequency", main="Num. effective internal controls")
+axis(side=2, at=seq(0, nrow(df3), 200))
+par(mfrow = c(1, 1))
+
+# plot the transformed company market cap, total auditing fees, and effective internal control
+sp = ggplot(df3, aes(x=market_cap_bc, y=five_category_factor,
+                     group=effective_internal_controls)) +
+  geom_point(aes(color=effective_internal_controls), size=0.9,
+             position=position_dodge2(0.3))
+
+labels = as.vector(outer(rep("Num. of 'No'="), table(df3$effective_internal_controls,
+                                                     df3$five_category_factor)[1,],
+                         paste, sep=""))
+sp + annotate(geom="text", x=rep(27.5, 5), y=seq(0.7, 4.7, 1), label= labels) 
+
+# plot the transformed company market cap vs. total auditing fees
+ggplot(df3, aes(x=market_cap_bc, y=total_fees_bc, group=five_category_factor)) +
+  geom_point(aes(color=five_category_factor), size=0.9)
+
+cor(df3$market_cap_bc, df3$total_fees_bc)
+
+# plot the auditing fees
+ggplot(df3, aes(x=five_category_factor, y=total_fees_bc)) + 
+  geom_violin(trim=FALSE, fill="gray")+
+  labs(title="Auditing fees",x="category", y = "total fees")+
+  geom_boxplot(width=0.3)+
+  theme_classic()
+# Change color by groups
+dp <- ggplot(df3, aes(x=five_category_factor, y=total_fees_bc, fill=five_category_factor)) + 
+  geom_violin(trim=FALSE)+
+  geom_boxplot(width=0.3, fill="white")+
+  labs(title="Plot of auditing fees",x="category", y = "total fees")
+dp + theme_classic()
+
+# perform analysis of variance for 1-5 auditing company levels(146-153 for future thoughts)
+#m5_ancova = lm(total_fees_bc ~ five_category_factor + market_cap_bc +
+#five_category_factor*market_cap_bc, df3)
+#Anova(m5_ancova, type=3)
+
+#library(multcomp)
+#postHocs <- glht(m5_ancova, linfct=mcp(five_category_factor="Tukey"))
+#summary(postHocs)
+
+# perform analysis to compare big 4
+# between big4, considering the market cap as covariate, the fee charges from
+# big4 do not have a significant difference __need to add nonBIg4 and BIg4 fee difference considering balance
+m4_ancova = lm(total_fees_bc ~ five_category_factor + market_cap_bc +
+                 five_category_factor*market_cap_bc, df3[df3$big_4_factor==1,])
+Anova(m4_ancova, type=3)
+
+# perform a statistical test here to compare big4 vs non big4 when considering 
+# market cap as covariate 
+
+#?whether hierarchical is better? how to produce a better K? how to deal with data to make cluster better?
+set.seed(143)
+pca_data = na.omit(df3[ ,c("audit_fees_bc", "total_fees_bc", "market_cap_bc",
+                           "market_fee_ratio", "assets_log", "revenue_trans",
+                           "earnings_trans")])
+km.res <- kmeans(pca_data, 4, nstart=25)
+
+aggregate(pca_data, by=list(cluster=km.res$cluster), mean)
+
+dd <- cbind(pca_data, cluster=km.res$cluster)
+head(dd)
+fviz_cluster(km.res, data=pca_data)
+
+
+# predict the total auditing fee based on other variables
+set.seed(2501)
+data_split = initial_split(df3, prop=0.8)
+data_train = training(data_split)
+data_test = testing(data_split)
+
+rf1 <- randomForest(total_fees_bc ~ five_category_factor + state_region + 
+                      market_cap_bc + assets_log + revenue_trans + earnings_trans,
+                    data=data_train, importance=TRUE)
+
+rf1
+plot(rf1)
+modelr::rmse(rf1, data_test)
+varImpPlot(rf1, type=1)
+rf_predict <- predict(rf1, data_test)
+
+RSQUARE = function(y_actual,y_predict){
+  cor(y_actual,y_predict)^2
+}
+
+R2 <- RSQUARE(data_test$audit_fees_bc, rf_predict)
+
+
+# plot predicted vs. actual values
+plot(x=rf_predict, y= data_test$audit_fees_bc, xlab="Predicted Values",
+     ylab="Actural Values", main="Predicted vs. Actual Values")
+
+# add diagonal line for estimated regression line
+abline(a=0, b=1)
+mylabel =  bquote(italic(R)^2 == .(format(R2, digits = 3)))
+legend("topleft", legend=mylabel)
+
+
+# question1: is there a difference between big 4 and others in term of auditing fees(?)
+# question2: is there a significant difference among big 4
+# question3: big4 and non big4, do they have similar auditing fee structure (?)
+# question4: can we predict the approximate auditing fees based on other information(keyi)
+
+# book_value has more than 600 missings, if use that column, may need imputation 
+
