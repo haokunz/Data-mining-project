@@ -103,6 +103,18 @@ df3$big_four_indicator <- ifelse(df3$auditor_key <= 4, 1, 0)
 df3$five_category <- ifelse(df3$auditor_key < 5, df3$auditor_key, 5)
 df3$audit_percent <- df3$audit_fees / df3$total_fees
 
+## add region indicator and remove specific location indicators
+df3$US_West <- as.factor(ifelse(df3$state_region == "US West", 1, 0))
+df3$US_Midwest <- as.factor(ifelse(df3$state_region == "US Midwest", 1, 0))
+df3$US_Southeast <- as.factor(ifelse(df3$state_region == "US Southeast", 1, 0))
+df3$US_New_England <- as.factor(ifelse(df3$state_region == "US New England", 1, 0))
+df3$Canada <- as.factor(ifelse(df3$state_region == "Canada", 1, 0))
+df3$Foreign <- as.factor(ifelse(df3$state_region == "Foreign", 1, 0))
+df3$US_MAtlan <- as.factor(ifelse(df3$state_region == "US Mid Atlantic", 1, 0))
+df3$US_Southwest <- as.factor(ifelse(df3$state_region == "US Southwest", 1, 0))
+df3 <- df3 %>%
+  select(-c("state_region", "state_code", "city", "state_name"))
+
 ## add transformation variables to the data
 df3$audit_fees_bc <- predict(BoxCoxTrans(df3$audit_fees), df3$audit_fees)
 non_audit_bc <- predict(BoxCoxTrans(df3$non_audit_fees[df3$non_audit_fees!=0]),
@@ -123,6 +135,7 @@ df3$earnings_trans <- (earnings_0/abs(earnings_0)) * log(abs(df3$earnings) + 1)
 df3$big_4_factor <- as.factor(df3$big_four_indicator)
 df3$five_category_factor <- as.factor(df3$five_category)
 df3$state_region <- as.factor(df3$state_region)
+df3$auditor_key <- as.factor(df3$auditor_key)
 
 
 # Step 3. Data visualization(EDA - Exploratory Data Analysis) 
@@ -235,7 +248,7 @@ clus1 = ggplot(df3) +
   labs(color='Cluster')
 # group 2: low conversion, high count details
 clus2 = ggplot(df3) +
-  geom_point(aes(x=df3$assets_log, y=df3$audit_fees_bc, color=factor(cluster))) +
+  geom_point(aes(x=df3$big_four_indicator, y=df3$audit_fees_bc, color=factor(cluster))) +
   labs(color='Cluster')
 ggarrange(clus1, clus2, common.legend = TRUE,
           legend = "bottom")
