@@ -50,9 +50,11 @@ library(DMwR2)
 library(car)
 library(factoextra)
 library(rfUtilities)
+library(LICORS)
+library(PCAmixdata)
 
 ## read the dataset
-df <- read.csv("/Users/lloydcheng/Desktop/UT-Austin/2023_Spring_Semester/Data_Mining/Final_Project/internal_control_data.csv",
+df <- read.csv("https://raw.githubusercontent.com/haokunz/Data_mining_project/main/data/internal_controls_data_1680556746.csv",
                header = TRUE)
 ## delete copyright and lines of notes
 df <- df[-c(nrow(df), nrow(df)-1), ]
@@ -192,7 +194,7 @@ dp + theme_classic()
 
 
 # Step 4. Unsupervised learning: Use PCAmix and K-means++ clustering to do the company segmentation
-
+df3$effective_internal_controls_factor = as.factor(ifelse(df3$effective_internal_controls == "No", 0, 1))
 
 
 
