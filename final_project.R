@@ -196,17 +196,48 @@ dp + theme_classic()
 # Step 4. Unsupervised learning: Use PCAmix and K-means++ clustering to do the company segmentation
 df3$effective_internal_controls_factor = as.factor(ifelse(df3$effective_internal_controls == "No", 0, 1))
 
+X.quanti <- splitmix(df3)$X.quanti %>% scale()
+X.quali <- splitmix(df3)$X.quali
+df3_pca <- PCAmix(X.quanti, X.quali, ndim=4, rename.level = TRUE, graph=FALSE)
+
+df3_pca_scores = df3_pca$ind$coord %>% as.data.frame()
+
+# append 4 pc to df3
+df3$PC1 <- df3_pca_scores$`dim 1`
+df3$PC2 <- df3_pca_scores$`dim 2`
+df3$PC3 <- df3_pca_scores$`dim 3`
+df3$PC4 <- df3_pca_scores$`dim 4`
 
 
+# KClustering
+## Choose optimal K - CH index
+k_grid = seq(2, 6, by=1)
+set.seed(8964)
+df_CH_grid = foreach(k=k_grid, .combine='rbind') %do% {
+  cluster_k = kmeanspp(df3_pca_scores, k, nstart = 50)
+  W = cluster_k$tot.withinss
+  B = cluster_k$betweenss
+  CH = (B/W)*((nrow(df3_pca_scores)-k)/(k-1))
+  c(k=k, stat = CH)
+} %>% as.data.frame()
 
+df_kmpp = kmeanspp(df3_pca_scores, k=3, nstart=25)
+df3$cluster = df_kmpp$cluster 
 
-
-
-
-
-
-
-
+## Analysis
+### Find out significant differences among groups
+### Ans: although CH index suggests that optimal k = 4, but we can only
+### find meaningful clustering with k = 3 instead of 4
+# group 1+4 vs. 3
+clus1 = ggplot(df3) +
+  geom_point(aes(x=counts_profileVisits, y=conversion, color=factor(cluster))) +
+  labs(color='Cluster')
+# group 2: low conversion, high count details
+clus2 = ggplot(lovoo_data) +
+  geom_point(aes(x=countDetails, y=conversion, color=factor(cluster))) +
+  labs(color='Cluster')
+ggarrange(clus1, clus2, common.legend = TRUE,
+          legend = "bottom")
 # Step 5. Modeling: Linear regression, knn, Regression tree: random forest, CART, Boosting
 
 ### Base model: Linear regression(Bid model)
