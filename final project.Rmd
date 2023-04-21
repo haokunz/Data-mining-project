@@ -39,7 +39,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ### Step 5. : 像company name, city 這種變數該怎麼處理
 ### Step 6. Problem: lm, knn, lasso 的k-fold CV怎麼做
 
-```{r cars}
+```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 # Step 2. Data wrangling & load the needed packages
 ## Loaded the needed packages
 library(tidyverse)
@@ -61,11 +61,17 @@ library(DMwR2)
 library(car)
 library(factoextra)
 library(rfUtilities)
+<<<<<<< Updated upstream
 library(LICORS)
 library(PCAmixdata)
 library(ggpubr)
 library(foreach)
 library(dplyr)
+=======
+library(rsample)
+library(multcomp)
+library(cluster)
+>>>>>>> Stashed changes
 
 ## read the dataset
 df <- read.csv("https://raw.githubusercontent.com/haokunz/Data_mining_project/main/data/internal_controls_data_1680556746.csv",
@@ -210,11 +216,11 @@ ggplot(df3, aes(x=market_cap_bc, y=total_fees_bc, group=five_category_factor)) +
 cor(df3$market_cap_bc, df3$total_fees_bc)
 
 # plot the auditing fees
-ggplot(df3, aes(x=five_category_factor, y=total_fees_bc)) + 
-  geom_violin(trim=FALSE, fill="gray")+
-  labs(title="Auditing fees",x="category", y = "total fees")+
-  geom_boxplot(width=0.3)+
-  theme_classic()
+#ggplot(df3, aes(x=five_category_factor, y=total_fees_bc)) + 
+#  geom_violin(trim=FALSE, fill="gray")+
+#  labs(title="Auditing fees",x="category", y = "total fees")+
+#  geom_boxplot(width=0.3)+
+#  theme_classic()
 # Change color by groups
 dp <- ggplot(df3, aes(x=five_category_factor, y=total_fees_bc, fill=five_category_factor)) + 
   geom_violin(trim=FALSE)+
@@ -224,6 +230,7 @@ dp + theme_classic()
 ```
 
 # Step 4. Unsupervised learning: Use PCAmix and K-means++ clustering to do the company segmentation
+<<<<<<< Updated upstream
 ```{r }
 df3$effective_internal_controls_factor = as.factor(ifelse(df3$effective_internal_controls == "No", 0, 1))
 
@@ -239,6 +246,13 @@ df3$PC2 <- df3_pca_scores$`dim 2`
 df3$PC3 <- df3_pca_scores$`dim 3`
 df3$PC4 <- df3_pca_scores$`dim 4`
 
+=======
+```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE }
+# perform analysis of variance for 1-5 auditing company levels
+m5_ancova = lm(total_fees_bc ~ five_category_factor + market_cap_bc +
+              five_category_factor*market_cap_bc, df3)
+Anova(m5_ancova, type=3)
+>>>>>>> Stashed changes
 
 # KClustering
 ## Choose optimal K - CH index
@@ -276,45 +290,6 @@ ggarrange(clus1, clus2, common.legend = TRUE,
 ## for gamlr, and many other fitting functions,
 ## We need to create the specific numeric feature matrix.
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-# Step 5. 用lasso 和Random Forest兩個model，找出會影響audit fee的因素有哪些
-# imoute the n.a. value
-#imputeaudit <- knnImputation(df3, k = 100, scale = T, meth = "median", distData = NULL)
-
-### Random Forest
-df3_split = initial_split(df3, prop = 0.7)
-df3_train = training(df3_split)
-df3_test = testing(df3_split)
-df3_train <- na.omit(df3_train)
-##
-auditfee_rforest = randomForest(audit_fees_bc ~ . - company -auditor_key - effective_internal_controls
-                                - auditor - auditor_state_name -audit_fees -market_cap -revenue -total_fees_bc
-                                -total_fees -non_audit_fees -assets -five_category -big_four_indicator -earnings
-                                -state_region -market_fee_ratio -cluster,
-                                data = df3_train, importance = TRUE)
-# shows out-of-bag MSE as a function of the number of trees used
-# plot(lvforest)
-plot(auditfee_rforest)
-
-# variable importance measures
-# how much does mean-squared error increase when we ignore a variable?
-vi = varImpPlot(auditfee_rforest)
-
-# The upper chart shows that the x axis represents percentage increase in mean square error and the y axis represents different variables.
-
-# Then we study the partial importance of each variable by eyeballing Figure
-# partial dependence plots
-# these are trying to isolate the partial effect of specific features
-# on the outcome
-#partialPlot(auditfee_rforest, df3_test, 'age', main=paste("") , las=1)
-#partialPlot(auditfee_rforest, df3_test, 'counts_pictures', main=paste("") , las=1)
-
-#partialPlot(auditfee_rforest, df3_test, 'lang_fr', main=paste("") ,las=1)
-#partialPlot(auditfee_rforest, df3_test, 'lang_de', main=paste("") , las=1)
-#partialPlot(auditfee_rforest, df3_test, 'countDetails', main=paste("") , las=1)
-#partialPlot(auditfee_rforest, df3_test, 'freshman', main=paste("") , las=1)
-
-
-```
 ### Write the explanation of step 5
 
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
@@ -378,7 +353,7 @@ auditfee_gbm = gbm(audit_fees_bc ~ . - company - auditor - auditor_key - auditor
 ## maybe solve the problem "像company name, city 這種變數該怎麼處理", we can figure out this
 
 ```
-### Step 7. 評價模型: K-fold Cross-validation
+### Step 7. K-fold Cross-validation
 ## Problem: lm, knn, lasso 的k-fold CV怎麼做
 ## Syntax in HW 3
 ## K-fold Cross-validation: (k-1) is training set, 1 is testing set
