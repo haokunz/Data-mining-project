@@ -305,7 +305,6 @@ summary(res_total)
 
 ```
 From the above figures, we. can see that linear model has the lowest MAE, Random Forest has the second lowest MAE. Gradient-Boosting model has the lowest RMSWE, and Random Forest also has the. second lowest RMSE.As a result, we decided to choose these 3 models initially and do the advanced feature engineering.
-###老師有教怎麼用stepwise model 找出feature selection###
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 # Step 6 & 7: Model training and assess the model performance
 
@@ -401,19 +400,7 @@ However, we know that we can't just use R-square to assess the model performance
 
 
 
-```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-### Neglect below
-### Model3: build the best model - feature engineering by LASSO 
-# Use LASSO to find main effects + interaction by eyeballing
-df3_lasso_x_main = model.matrix(total_fees ~  (.-1-), data=hotels_dev_train)
-hotels_lasso_x_itac = model.matrix(children ~  (.-1-arrival_date)^2, data=hotels_dev_train)
-hotels_lasso_y = hotels_dev_train$children
-## "$" extract a specific part of a data object
-```
 
-```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-
-```
 
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 
