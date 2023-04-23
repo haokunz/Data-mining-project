@@ -86,11 +86,12 @@ non_audit_bc <- predict(BoxCoxTrans(df3$non_audit_fees[df3$non_audit_fees!=0]),
                         df3$non_audit_fees[df3$non_audit_fees!=0])
 df3$total_fees_bc <- predict(BoxCoxTrans(df3$total_fees), df3$total_fees)
 df3$market_cap_bc <- predict(BoxCoxTrans(df3$market_cap), df3$market_cap)
-df3$market_fee_ratio <- log(df3$market_cap/ df3$total_fees)
+df3$market_fee_ratio <- log(df3$total_fees/ df3$market_cap)
 df3$assets_log <- log(df3$assets)
 
 revenue_0 = jitter(df3$revenue)
 df3$revenue_trans <- (revenue_0/abs(revenue_0)) * log(abs(df3$revenue) + 1)
+mean((revenue_0/abs(revenue_0)))
 
 earnings_0 = jitter(df3$earnings)
 df3$earnings_trans <- (earnings_0/abs(earnings_0)) * log(abs(df3$earnings) + 1)
@@ -225,7 +226,7 @@ plot(postHocs)
 
 ## Unsupervised Learning: Clustering
 \flushleft
-After exploring the data set, we continued to cluster with the companies based on the following values: audit fees($), total fees($), Market capitalization($), market-fee ratio, asset value($) after natural log transformation and transformed revenue and earnings. We used the Gap Statistic and K-means methods to determine the number of clusters.
+After exploring the data set, we continued to cluster with the companies based on the following values before and after previous transformation: audit fees(\$), total fees(\$), Market capitalization(\$), market-fee ratio, asset value(\$), revenue(\$) and earnings(\$). We used the Gap Statistic and K-means methods to determine the number of clusters.
 # Gap Statistic for Estimating the Number of Clusters
 This method estimates a goodness of clustering measure, the "gap" statistic with a given range of number of clusters K. For each K, it compares the log value of dispersion of observations within a cluster to the estimated log value of dispersion. In this report, the maximum number of clusters to consider is 10. 
 ```{r fig8, fig.align='center', fig.cap="Gap Statistic Clustering Result" warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE, results= FALSE, fig.keep='all'}
@@ -234,29 +235,49 @@ pca_data = na.omit(df3[ ,c("audit_fees_bc", "total_fees_bc", "market_cap_bc",
                            "market_fee_ratio", "assets_log", "revenue_trans",
                            "earnings_trans")])
 
+pca_data_2 = na.omit(df3[ ,c("audit_fees", "total_fees", "market_cap",
+                           "market_fee_ratio", "assets", "revenue",
+                           "earnings")])
+
 gap_stat <- clusGap(pca_data, FUN = kmeans, nstart = 25,
                     K.max = 10, B = 50)
 print(gap_stat, method = "firstmax")
 fviz_gap_stat(gap_stat)
 
 ```
-As The Figure \ref@(fig: fig8) suggests. The Gap statistic estimates that the optimal number of clusters is 2.
+As The Figure \ref@(fig: fig8) suggests, the Gap statistic estimates that the optimal number of clusters is 2
 
 # K-means Clustering
-The K-means clustering uses a principal component analysis to create clusters, classify and partition objects into multiple groups that the objects are as similar as possible within, and as dissimilar to the objects in other groups as possible. K represents the number of groups. From the previous result, we select 2 sets of groups, with the same variables as Gap statistic used.  
-```{r fig9, fig.align='center', fig.cap="K-means Clustering Result" warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+The K-means clustering uses a principal component analysis to create clusters, and classify and partition objects into multiple groups. The objects are as similar as possible within, and as dissimilar to the objects in other groups as possible. K represents the number of groups. From the previous result, we select 2 sets of groups, with the same variables as Gap statistic used.  
+```{r fig9, fig.align='center', fig.cap="K-means Clustering Result of Untransformed Data" warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 km.res <- kmeans(pca_data, 2, nstart=25) # k-means clustering
 
 clusters <- data.frame(aggregate(pca_data, by=list(cluster=km.res$cluster), mean)) # get the summary statistics of the data by group.
 knitr::kable(clusters,
-             caption = "Characteristics of K-means Clustering Groups",
+             caption = "Features of K-means Clustering Groups",
              digits = 3)
 
 dd <- cbind(pca_data, cluster=km.res$cluster)
-fviz_cluster(km.res, data=pca_data)
 
+km.res_2 <- kmeans(pca_data_2, 2, nstart=25) # k-means clustering
+
+clusters_2 <- data.frame(aggregate(pca_data_2, by=list(cluster=km.res_2$cluster), mean)) # get the summary statistics of the data by group.
+knitr::kable(clusters_2,
+             caption = "Untransformed Features of K-means Clustering Groups",
+             digits = 3)
+
+dd <- cbind(pca_data_2, cluster=km.res_2$cluster)
+
+fviz_cluster(km.res, data=pca_data)
 ```
-The K-means clustering aggregated 2 groups that have similar features. The Figure \ref@(fig:fig9) shows that both groups overlap each other in many areas. The component of the first principal component accounts for 55.8% of the total variation. And the second principal component accounts for 19.4% Together they explain 75.2% variation in the data set.
+The K-means clustering aggregated 2 clusters that have distinct features. The Figure \ref@(fig:fig9) shows that these two groups overlap each other in large areas, which is expected because the box-cox and natural log transformation transformed value of the data to be closer to each other. Unsatisfied with the result, we conducted the same clustering with original data.
+
+As shown in Table \ref@(table:table2), companies in cluster 2 have smaller market caps and assets than companies in cluster 1. In cluster 1, the mean asset value is \$2.2 trillion and mean market capitalization is 1.2 trillion. Cluster 2 has mean value of asset worth \$0.2 trillion and 0.17 trillion market capitalization. As a result of less market capitalization, companies in cluster 2 have a mean market-fee ratio of 0.12% while companies in the second cluster has 0.06%. The cluster 2 also has less revenue and earnings than cluster 1. For instance, mean revenue of cluster 2 is approximately \$0.78 trillion while the mean revenue of cluster 2 is \$5.2 trillion. 
+
+In the cluster plot, The component of the first principal component accounts for 55.8% of the total variation, and the second principal component accounts for 19.4%. Together they explain 75.2% variation in the data set. The limited number of variables selected when clustering can explain this issue. Along with variables that have similar values to each other after transformation, the same reason could explain the large area that clusters overlap each other in Figure \ref@(fig:fig9). The overlapped area is smaller in Fig \ref@(fig:fig10) and the clusters are more distinctive.
+```{r fig10, fig.align='center', fig.cap="K-means Clustering Result of Untransformed Data" warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+fviz_cluster(km.res_2, data=pca_data_2)
+```
 
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 # Step 6 & 7: Model training and assess the model performance
