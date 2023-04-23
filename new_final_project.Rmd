@@ -8,7 +8,7 @@ output: bookdown::pdf_document2
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-#Introduction:
+# Introduction:
 Companies listed on U.S. stock exchanges are required by law to have their financial statements audited by an independent auditor. This requirement is designed to provide assurance to stakeholders, such as investors, creditors, and regulators, that the company's financial statements are presented fairly and accurately in accordance with accounting standards and can help to build trust and confidence in the company. An audit fee then is necessary to be paid to the independent auditor for their services in conducting the audit of the company's financial statements. The audit fee is typically paid annually and covers the cost of the auditor's time, expertise and resources required to conduct the audit as well as potential legal and reputational risks associated with the audit.
 
 To be specific, (1)Time: Auditors spend a significant amount of time reviewing a company's financial statements, internal controls, and other relevant information. The amount of time required depends on the size and complexity of the company, as well as the scope of the audit. Market capitalization, scale of assets, scale of revenue, scale of earnings etc. could be useful indicators of complexity of companies. (2) Expertise and resource required: Auditors are highly trained professionals with specialized knowledge in accounting, auditing, and financial reporting. They use this expertise to assess the accuracy and reliability of a company's financial statements, as well as to identify potential risks and areas for improvement. Among all auditors in the world, Big Four firms (Deloitte, PwC, EY, and KPMG) are usually considered to be more expertise than non-Big 4 firms due to their extensive global networks, significant presence in multiple countries, heavy investment in training and development programs for their staff as well as great investment in technology and innovation. (3) Potential legal and reputational risk: If a material misstatement is later discovered in the financial statements, the auditors may be held liable for any losses suffered by investors or other stakeholders. Meanwhile, if an auditor's work is called into question or their reputation is damaged, it can be difficult for them to attract new clients or retain existing ones. An adverse opinion on internal control over financial reporting (ICFR) could be an indicator of potential legal and reputational higher risk for auditors.
@@ -26,6 +26,7 @@ library(rfUtilities)
 library(rsample)
 library(multcomp) 
 library(cluster) 
+library(kableExtra)
 
 df <- read.csv("https://raw.githubusercontent.com/haokunz/Data_mining_project/main/data/internal_controls_data_0421.csv",
                header = TRUE)
@@ -226,12 +227,13 @@ plot(postHocs)
 ```
 
 
-## Unsupervised Learning: Clustering
+# Unsupervised Learning: Clustering
 \flushleft
 After exploring the data set, we continued to cluster with the companies based on the following values before and after previous transformation: audit fees(\$), total fees(\$), Market capitalization(\$), market-fee ratio, asset value(\$), revenue(\$) and earnings(\$). We used the Gap Statistic and K-means methods to determine the number of clusters.
-# Gap Statistic for Estimating the Number of Clusters
+
+## Gap Statistic for Estimating the Number of Clusters
 This method estimates a goodness of clustering measure, the "gap" statistic with a given range of number of clusters K. For each K, it compares the log value of dispersion of observations within a cluster to the estimated log value of dispersion. In this report, the maximum number of clusters to consider is 10. 
-```{r fig8, fig.align='center', fig.cap="Gap Statistic Clustering Result" warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE, results= FALSE, fig.keep='all'}
+```{r fig8, fig.align='center', fig.cap="Gap Statistic Clustering Result", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE, results= FALSE, fig.keep='all'}
 set.seed(143) # same random values are produced each time you run the code
 pca_data = na.omit(df3[ ,c("audit_fees_bc", "total_fees_bc", "market_cap_bc",
                            "market_fee_ratio", "assets_log", "revenue_trans",
@@ -247,19 +249,25 @@ print(gap_stat, method = "firstmax")
 fviz_gap_stat(gap_stat)
 
 ```
-As The Figure \ref@(fig: fig8) suggests, the Gap statistic estimates that the optimal number of clusters is 2
+As The Figure \ref@(fig: fig8) suggests, the Gap statistic estimates that the optimal number of clusters is 2. 
 
-# K-means Clustering
+## K-means Clustering
 \flushleft
 The K-means clustering uses a principal component analysis to create clusters, and classify and partition objects into multiple groups. The objects are as similar as possible within, and as dissimilar to the objects in other groups as possible. K represents the number of groups. From the previous result, we select 2 sets of groups, with the same variables as Gap statistic used.  
-```{r fig9, fig.align='center', fig.cap="K-means Clustering Result of Untransformed Data" warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+
+\flushleft
+2 clusters are generated with distinct features. The Figure \@ref(fig:fig9) shows that these two groups overlap each other in large areas, which is expected because the box-cox and natural log transformation transformed value of the data to be closer to each other. Unsatisfied with the result, we conduct the same clustering with original data.
+```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 km.res <- kmeans(pca_data, 2, nstart=25) # k-means clustering
 
 clusters <- data.frame(aggregate(pca_data, by=list(cluster=km.res$cluster), mean)) # get the summary statistics of the data by group.
 knitr::kable(clusters,
              caption = "Features of K-means Clustering Groups",
-             digits = 3)
+             digits = 3) %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"))
+```
 
+``` {r fig9, fig.align='center', fig.cap="K-means Clustering Result of Untransformed Data", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 dd <- cbind(pca_data, cluster=km.res$cluster)
 
 km.res_2 <- kmeans(pca_data_2, 2, nstart=25) # k-means clustering
@@ -267,19 +275,18 @@ km.res_2 <- kmeans(pca_data_2, 2, nstart=25) # k-means clustering
 clusters_2 <- data.frame(aggregate(pca_data_2, by=list(cluster=km.res_2$cluster), mean)) # get the summary statistics of the data by group.
 knitr::kable(clusters_2,
              caption = "Untransformed Features of K-means Clustering Groups",
-             digits = 3)
+             digits = 3) %>%
+  kable_styling(latex_options = "scale_down")
 
-dd <- cbind(pca_data_2, cluster=km.res_2$cluster)
+dd_2 <- cbind(pca_data_2, cluster=km.res_2$cluster)
 
 fviz_cluster(km.res, data=pca_data)
 ```
-\flushleft
-The K-means clustering aggregated 2 clusters that have distinct features. The Figure \ref@(fig:fig9) shows that these two groups overlap each other in large areas, which is expected because the box-cox and natural log transformation transformed value of the data to be closer to each other. Unsatisfied with the result, we conducted the same clustering with original data.
 
-As shown in Table \ref@(table:table2), companies in cluster 2 have smaller market caps and assets than companies in cluster 1. In cluster 1, the mean asset value is \$2.2 trillion and mean market capitalization is 1.2 trillion. Cluster 2 has mean value of asset worth \$0.2 trillion and 0.17 trillion market capitalization. As a result of less market capitalization, companies in cluster 2 have a mean market-fee ratio of 0.12% while companies in the second cluster has 0.06%. The cluster 2 also has less revenue and earnings than cluster 1. For instance, mean revenue of cluster 2 is approximately \$0.78 trillion while the mean revenue of cluster 2 is \$5.2 trillion. 
+As shown in Table \@ref(table:table2), companies in cluster 2 have smaller market caps and assets than companies in cluster 1. In cluster 1, the mean asset value is \$2.2 trillion and mean market capitalization is 1.2 trillion. Cluster 2 has mean value of asset worth \$0.2 trillion and 0.17 trillion market capitalization. As a result of less market capitalization, companies in cluster 2 have a mean market-fee ratio of 0.12% while companies in the second cluster has 0.06%. The cluster 2 also has less revenue and earnings than cluster 1. For instance, mean revenue of cluster 2 is approximately \$0.78 trillion while the mean revenue of cluster 2 is \$5.2 trillion. 
 
-In the cluster plot, The component of the first principal component accounts for 55.8% of the total variation, and the second principal component accounts for 19.4%. Together they explain 75.2% variation in the data set. The limited number of variables selected when clustering can explain this issue. Along with variables that have similar values to each other after transformation, the same reason could explain the large area that clusters overlap each other in Figure \ref@(fig:fig9). The overlapped area is smaller in Fig \ref@(fig:fig10) and the clusters are more distinctive.
-```{r fig10, fig.align='center', fig.cap="K-means Clustering Result of Untransformed Data" warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+In the cluster plot, The component of the first principal component accounts for 55.8% of the total variation, and the second principal component accounts for 19.4%. Together they explain 75.2% variation in the data set. The limited number of variables selected when clustering can explain this issue. Along with variables' values that are similar to each other after transformation, the same reason could explain the large area that clusters overlap each other in Figure \@ref(fig:fig9). The overlapped area is smaller in Fig \@ref(fig:fig10) and the clusters are more distinctive.
+```{r fig10, fig.align='center', fig.cap="K-means Clustering Result of Untransformed Data", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 fviz_cluster(km.res_2, data=pca_data_2)
 ```
 \flushleft
@@ -345,7 +352,7 @@ gbm_cv <- train(total_fees_bc ~ five_category_factor + state_region +
                   market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
                 method="gbm", trControl=tc, tuneLength=10, verbose=FALSE)
 # Assess the model performance
-model_list <- list(lm = lm_cv, knn = knn_cv, rf = rf_cv, cart = cart_cv, gbm = gbm_cv)
+model_list <- list(lm = lm_cv, rf = rf_cv, gbm = gbm_cv)
 res = resamples(model_list) # rsample: take randomly drawn (sub)samples of the sample and calculate the statistic from that (sub)sample
 summary(res) # the higher is R-square is better
 
@@ -446,5 +453,5 @@ Any predictive model is built based on the data given to learn, so is ours. Our 
 
 
 ```
-Appendix:
+# Appendix:
 The auditor’s report on internal controls over financial reporting (ICFR) is one of the few publicly observable ways for auditors to disclose unfavorable audit findings. Companies listed on U.S. stock exchanges with market capitalizations greater than $75 million must secure an independent audit opinion on ICFR under the Section 404(b) of the Sarbanes-Oxley Act of 2002, as amended by the Dodd-Frank Act of 2010. ICFR is the processes that ensure reliable financial reporting. Thus, while the auditor’s opinion on the financial statements covers the product of financial reporting, the ICFR audit covers the processes that generate financial reports. The distinction is important because nearly every U.S. public company receives an unqualified (i.e., clean) audit opinion on its financial statements as the U.S. Securities and Exchange Commission (SEC) will not allow companies to trade on a stock exchange unless they correct any material errors the auditor detects in the financial statements. However, even if the audit opinion on the financial statements is clean, companies can still get an adverse audit opinion on ICFR if the auditor concludes that the company’s internal controls over financial reporting are subject to one or more material weaknesses. An adverse opinion on ICFR indicates that the auditor believes that there are significant deficiencies in the company's internal controls that could potentially lead to material misstatements in the financial statements, which means that the auditor does not have confidence in the reliability of the company's financial reporting processes. Therefore, when auditors issue an adverse opinion on ICFR, auditors need to spend additional time, effort, and expertise required to mitigate the risk which could lead to material financial misstatements.
