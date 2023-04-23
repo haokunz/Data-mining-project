@@ -278,91 +278,123 @@ In the cluster plot, The component of the first principal component accounts for
 ```{r fig10, fig.align='center', fig.cap="K-means Clustering Result of Untransformed Data" warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 fviz_cluster(km.res_2, data=pca_data_2)
 ```
+# Supervised Learning
+In the supervised learning part, we want to build several models and choose the best performance model to do the prediction of total audit fees. The workflow is shown below:
+Firstly, We want to try various models. We chose 5 models here: Linear model, KNN model,Random forest model, CART model and Gradient-Boosting model. 
+Secondly, we used K-fold cross validation to assess the model.
+Lastly, we would consider the MAE, RMSE and R-square to decide which model has the best performance.
+In the first step, we did the preliminary feature engineering, we abandon some features.
+```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+# The preliminary feature engineering: Abandon some unimportant features
+tc <- trainControl(method="cv", number=5)
+lmtotal_cv <- train(total_fees_bc ~ five_category_factor + earnings_trans + state_region + effective_internal_controls + audit_fees_bc + share_price + market_cap_bc + revenue_trans +
+                 assets_log , data=df3, na.action=na.omit,
+               method="lm", trControl=tc)
+knntotal_cv <- train(total_fees_bc ~ five_category_factor + earnings_trans + state_region + effective_internal_controls + audit_fees_bc + share_price + market_cap_bc + revenue_trans +
+                 assets_log, data=df3, na.action=na.omit,
+                method="knn", trControl=tc, tuneLength=20)
+rftotal_cv <- train(total_fees_bc ~  five_category_factor + earnings_trans + state_region + effective_internal_controls + audit_fees_bc + share_price + market_cap_bc + revenue_trans +
+                 assets_log, data=df3,na.action=na.omit,
+               method="rf", trControl=tc, tuneLength=10 )
+carttotal_cv <- train(total_fees_bc ~  five_category_factor + earnings_trans + state_region + effective_internal_controls + audit_fees_bc + share_price + market_cap_bc + revenue_trans +
+                 assets_log, data=df3,na.action=na.omit,
+                 method="rpart", trControl=tc, tuneLength=10)
+gbmtotal_cv <- train(total_fees_bc ~  five_category_factor + earnings_trans + state_region + effective_internal_controls + audit_fees_bc + share_price + market_cap_bc + revenue_trans +
+                 assets_log, data=df3,na.action=na.omit,
+                method="gbm", trControl=tc, tuneLength=10, verbose=FALSE)
+model_list_total <- list(lm = lmtotal_cv, knn = knntotal_cv, rf = rftotal_cv, cart = carttotal_cv, gbm = gbmtotal_cv)
+res_total = resamples(model_list_total) # rsample: take randomly drawn (sub)samples of the sample and calculate the statistic from that (sub)sample
+summary(res_total)
+## THe feature variables name
+# five_category_factor
+# earnings_trans
+# state_region
+# effective_internal_controls # effective_internal_controls沒有轉成 factor
+# audit_fees_bc
+# share_price
+# market_cap_bc
+# revenue_trans
+# assets_log
+```
+From the above figures, we. can see that linear model has the lowest MAE, Random Forest has the second lowest MAE. Gradient-Boosting model has the lowest RMSWE, and Random Forest also has the. second lowest RMSE.As a result, we decided to choose these 3 models initially and do the advanced feature engineering.
 
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 # Step 6 & 7: Model training and assess the model performance
-
 # compare models with 5-fold cross-validation
 ## Model building and use k-fold cv(k =5)
 tc <- trainControl(method="cv", number=5)
 lm_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
                  market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
                method="lm", trControl=tc)
-
-knn_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
-                  market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
-                method="knn", trControl=tc, tuneLength=20)
-
+# knn_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
+#                   market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
+#                 method="knn", trControl=tc, tuneLength=20)
 rf_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
                  market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
                method="rf", trControl=tc, tuneLength=10)
-
-cart_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
-                   market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
-                 method="rpart", trControl=tc, tuneLength=10)
-
+# cart_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
+#                    market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
+#                  method="rpart", trControl=tc, tuneLength=10)
 gbm_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
                   market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
                 method="gbm", trControl=tc, tuneLength=10, verbose=FALSE)
-
 # Assess the model performance
 model_list <- list(lm = lm_cv, knn = knn_cv, rf = rf_cv, cart = cart_cv, gbm = gbm_cv)
 res = resamples(model_list) # rsample: take randomly drawn (sub)samples of the sample and calculate the statistic from that (sub)sample
 summary(res) # the higher is R-square is better
 
 ```
-Depend on the above figure, we can see that random forest has the best performance, which has the lowest MAE, lowest RMSE and highest R-square.
+Depend on the above figures, after the advanced feature engineering, we saw that random forest model has the best performance, which has the lowest MAE, lowest RMSE and highest R-square. 
 
-So we choose Random Forest model to do the prediction of Total auditing fee based on other variables.
+So we chose Random Forest model to do the prediction of total auditing fee based on other variables.
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-# Choose the best performance model，use it to do the prediction，並且將結果圖表化？ Partial dependence plots etc
 
+# Choose the best performance model，use it to do the prediction
 # predict the total auditing fee based on other variables
 set.seed(2501)
 data_split = initial_split(df3, prop=0.8)
 data_train = training(data_split)
 data_test = testing(data_split)
-
 rf1 <- randomForest(total_fees_bc ~ five_category_factor + state_region + 
                       market_cap_bc + assets_log + revenue_trans + earnings_trans,
                     data=data_train, importance=TRUE)
-
 rf1
-plot(rf1)
-modelr::rmse(rf1, data_test)
-varImpPlot(rf1, type=1)
-rf_predict <- predict(rf1, data_test)
-
+plot(rf1) 
+## From the above chart, we saw that when number of trees is equal to 200, the MSE is slowing down.
+## As a result, we decided to choose ntree = 200
+rf1_200 <- randomForest(total_fees_bc ~ five_category_factor + state_region + 
+                      market_cap_bc + assets_log + revenue_trans + earnings_trans,
+                    data=data_train, ntree = 200,  importance=TRUE)
+modelr::rmse(rf1_200, data_test)
+varImpPlot(rf1_200, type = 1)
+# modelr::rmse(rf1, data_test)
+# varImpPlot(rf1, type=1) ###%IncMSE(Mean Decrease Accuracy)可以得知去除這項解釋變數(X)的話，模型的準確率會減少幾%。
+rf_predict <- predict(rf1_200, data_test)
 RSQUARE = function(y_actual,y_predict){
   cor(y_actual,y_predict)^2
 }
-
 R2 <- RSQUARE(data_test$audit_fees_bc, rf_predict)
+# rf1_200 <- randomForest(total_fees_bc ~ five_category_factor + state_region + 
+#                       market_cap_bc + assets_log + revenue_trans + earnings_trans,ntree = 200,
+#                     data=data_train, importance=TRUE)
+# modelr::rmse(rf1_200, data_test)
+# varImpPlot(rf1_200, type=1)
 ```
-the explanation of plot(rf1):
-the explanation of varImpPlot(rf1, type=1):
+The plot of rf1 shows out-of-bag MSE as a function of the number of trees used, We saw that when the number of tree is equal to about 200, the MSE is slowing down. So we choose number of tree = 200.
+
+The explanation of RMSE: Then we saw the RMSE of random forest model is 0.5354485, which is lower than other models.
+The explanation of varImpPlot(rf1, type=1):These are the most influential variables of total audit fees.  Revenues has the most influence on the total audit fees as we expected, if we delete the revenue variable, the accuracy of model will decrease about 45%. The other 5 variables: the region of the company, the market cap of the company, the asset of the company, the earnings of the company and whether the company is audited by the big 4, also have major influence on the model.
 
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-
 # plot predicted vs. actual values
 plot(x=rf_predict, y= data_test$audit_fees_bc, xlab="Predicted Values",
      ylab="Actual Values", main="Predicted vs. Actual Values")
-# add diagonal line for estimated regression line
 abline(a=0, b=1)
 mylabel =  bquote(italic(R)^2 == .(format(R2, digits = 3)))
 legend("topleft", legend=mylabel)
 ```
-the explanation of predict v.s. actual values
-
-We add the diagonal line for estimated regression line here.
-
-```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-Predict_state1 = predict(df3$total_fees_bc, "revenue_trans", 1 )
-Predict_GrennC2 = predict(df3$total_fees_bc, )
-Diff_0to1=Predict_GrennC1-Predict_GrennC0
-
-
-```
+From the above figure of predict value v.s. actual value, we saw that our model has good performance. The R-square is 0.748, which means that about 75% of the variability observed in the total audit fee can be explained by the random forest model.
+However, we know that we can't just use R-square to assess the model performance. We also consider MAE and RMSE. Compare to other models, random forest model still has lowest MAE(the average absolute magnitude between the actual values and the predicted values) and RMSE(the average difference between values predicted by a model and the actual values). As a result, we can make sure that random forest model is the best performance model.
 
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 
