@@ -260,7 +260,8 @@ In the supervised learning part, we want to build several models and choose the 
 Firstly, We want to try various models. We chose 5 models here: Linear model, KNN model,Random forest model, CART model and Gradient-Boosting model. 
 Secondly, we used K-fold cross validation to assess the model.
 Lastly, we would consider the MAE, RMSE and R-square to decide which model has the best performance.
-?????????要不要解釋為什麼只選了這6個變數去做回歸????????
+In the first step, we did the preliminary feature engineering, we abandon some features.
+#####說明為什麼只選擇這幾個variable去做mdoel: ask Luna#####
 
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 # The preliminary feature engineering: Abandon some unimportant features
@@ -290,9 +291,6 @@ model_list_total <- list(lm = lmtotal_cv, knn = knntotal_cv, rf = rftotal_cv, ca
 res_total = resamples(model_list_total) # rsample: take randomly drawn (sub)samples of the sample and calculate the statistic from that (sub)sample
 summary(res_total)
 
-# We can see that linear model has the lowest MAE, rf is no.2
-# GBM has the lowest gbm, rf is no.2
-
 ## THe feature variables name
 # five_category_factor
 # earnings_trans
@@ -306,11 +304,8 @@ summary(res_total)
 
 
 ```
-From the above figures, we. can see that linear model has the lowest MAE, rf is no.2, 
-GBM has the lowest gbm, rf is no.2
-So we decided to choose these 3 models initially.
-Then we do the advanced feature engineering.
-
+From the above figures, we. can see that linear model has the lowest MAE, Random Forest has the second lowest MAE. Gradient-Boosting model has the lowest RMSWE, and Random Forest also has the. second lowest RMSE.As a result, we decided to choose these 3 models initially and do the advanced feature engineering.
+###老師有教怎麼用stepwise model 找出feature selection###
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 # Step 6 & 7: Model training and assess the model performance
 
@@ -321,17 +316,17 @@ lm_cv <- train(total_fees_bc ~ five_category_factor + state_region +
                  market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
                method="lm", trControl=tc)
 
-knn_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
-                  market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
-                method="knn", trControl=tc, tuneLength=20)
+# knn_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
+#                   market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
+#                 method="knn", trControl=tc, tuneLength=20)
 
 rf_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
                  market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
                method="rf", trControl=tc, tuneLength=10)
 
-cart_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
-                   market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
-                 method="rpart", trControl=tc, tuneLength=10)
+# cart_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
+#                    market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
+#                  method="rpart", trControl=tc, tuneLength=10)
 
 gbm_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
                   market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
@@ -343,12 +338,11 @@ res = resamples(model_list) # rsample: take randomly drawn (sub)samples of the s
 summary(res) # the higher is R-square is better
 
 ```
-Depend on the above figures, we saw that random forest model has the best performance, which has the lowest MAE, lowest RMSE and highest R-square. 
+Depend on the above figures, after the advanced feature engineering, we saw that random forest model has the best performance, which has the lowest MAE, lowest RMSE and highest R-square. 
 
 So we chose Random Forest model to do the prediction of total auditing fee based on other variables.
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-# Choose the best performance model，use it to do the prediction，並且將結果圖表化？ Partial dependence plots etc
-
+# Choose the best performance model，use it to do the prediction
 # predict the total auditing fee based on other variables
 set.seed(2501)
 data_split = initial_split(df3, prop=0.8)
@@ -361,9 +355,17 @@ rf1 <- randomForest(total_fees_bc ~ five_category_factor + state_region +
 
 rf1
 plot(rf1) 
-modelr::rmse(rf1, data_test)
-varImpPlot(rf1, type=1) ###%IncMSE(Mean Decrease Accuracy)可以得知去除這項解釋變數(X)的話，模型的準確率會減少幾%。
-rf_predict <- predict(rf1, data_test)
+## From the above chart, we saw that when number of trees is equal to 200, the MSE is slowing down.
+## As a result, we decided to choose ntree = 200
+
+rf1_200 <- randomForest(total_fees_bc ~ five_category_factor + state_region + 
+                      market_cap_bc + assets_log + revenue_trans + earnings_trans,
+                    data=data_train, ntree = 200,  importance=TRUE)
+modelr::rmse(rf1_200, data_test)
+varImpPlot(rf1_200, type = 1)
+# modelr::rmse(rf1, data_test)
+# varImpPlot(rf1, type=1) ###%IncMSE(Mean Decrease Accuracy)可以得知去除這項解釋變數(X)的話，模型的準確率會減少幾%。
+rf_predict <- predict(rf1_200, data_test)
 
 RSQUARE = function(y_actual,y_predict){
   cor(y_actual,y_predict)^2
@@ -377,13 +379,13 @@ R2 <- RSQUARE(data_test$audit_fees_bc, rf_predict)
 # modelr::rmse(rf1_200, data_test)
 # varImpPlot(rf1_200, type=1)
 ```
-????????The plot of rf1 shows out-of-bag MSE as a function of the number of trees used, We saw that when the number of tree equal to about 200, the MSE is slowing down. So we choose number of tree = 200.???????要選 number of trees = 200 嗎？
+The plot of rf1 shows out-of-bag MSE as a function of the number of trees used, We saw that when the number of tree is equal to about 200, the MSE is slowing down. So we choose number of tree = 200.
 
-The explanation of rmse: Then we saw the rmse of random forest model is 0.5354485, which is lower than other models.
+The explanation of RMSE: Then we saw the RMSE of random forest model is 0.5354485, which is lower than other models.
 The explanation of varImpPlot(rf1, type=1):These are the most influential variables of total audit fees.  Revenues has the most influence on the total audit fees as we expected, if we delete the revenue variable, the accuracy of model will decrease about 45%. The other 5 variables: the region of the company, the market cap of the company, the asset of the company, the earnings of the company and whether the company is audited by the big 4, also have major influence on the model.
 
 ?????? How to explain why these 6 factors have major influence???????
-
+?????????要不要解釋為什麼只選了這6個變數去做回歸????????
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 
 # plot predicted vs. actual values
@@ -394,38 +396,38 @@ abline(a=0, b=1)
 mylabel =  bquote(italic(R)^2 == .(format(R2, digits = 3)))
 legend("topleft", legend=mylabel)
 ```
-the explanation of predict v.s. actual values: From the above figure of predict value v.s. actual value, we saw that our model has good performace. The R-square is 0.764, which means that 76% of the variability observed in the total audit fee can be expained by the random forest model.
-However, we know that we can't just use R-square to assess the model performance. We also consider MAE and RMSE. Compare to other models, random forest model still has lowest MAE(the average absolute magnitude between the actual values and the predicted values) and RMSE(the average difference between values predicted by a model and the actual values). As a result, we can make sure that random forest model is the best perfromance model.
+From the above figure of predict value v.s. actual value, we saw that our model has good performance. The R-square is 0.748, which means that about 75% of the variability observed in the total audit fee can be explained by the random forest model.
+However, we know that we can't just use R-square to assess the model performance. We also consider MAE and RMSE. Compare to other models, random forest model still has lowest MAE(the average absolute magnitude between the actual values and the predicted values) and RMSE(the average difference between values predicted by a model and the actual values). As a result, we can make sure that random forest model is the best performance model.
 
 
+
+```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+### Neglect below
+### Model3: build the best model - feature engineering by LASSO 
+# Use LASSO to find main effects + interaction by eyeballing
+df3_lasso_x_main = model.matrix(total_fees ~  (.-1-), data=hotels_dev_train)
+hotels_lasso_x_itac = model.matrix(children ~  (.-1-arrival_date)^2, data=hotels_dev_train)
+hotels_lasso_y = hotels_dev_train$children
+## "$" extract a specific part of a data object
+```
+
+```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+
+```
+
+```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+
+```
 
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 
 ```
 
 
-
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-
-
-
-
 
 ```
 
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 
-
-
-
-
 ```
-
-```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-
-
-
-
-
-```
-
