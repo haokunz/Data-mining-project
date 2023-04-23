@@ -8,10 +8,13 @@ output: bookdown::pdf_document2
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+#Introduction:
+Companies listed on U.S. stock exchanges are required by law to have their financial statements audited by an independent auditor. This requirement is designed to provide assurance to stakeholders, such as investors, creditors, and regulators, that the company's financial statements are presented fairly and accurately in accordance with accounting standards and can help to build trust and confidence in the company. An audit fee then is necessary to be paid to the independent auditor for their services in conducting the audit of the company's financial statements. The audit fee is typically paid annually and covers the cost of the auditor's time, expertise and resources required to conduct the audit as well as potential legal and reputational risks associated with the audit.
 
+To be specific, (1)Time: Auditors spend a significant amount of time reviewing a company's financial statements, internal controls, and other relevant information. The amount of time required depends on the size and complexity of the company, as well as the scope of the audit. Market capitalization, scale of assets, scale of revenue, scale of earnings etc. could be useful indicators of complexity of companies. (2) Expertise and resource required: Auditors are highly trained professionals with specialized knowledge in accounting, auditing, and financial reporting. They use this expertise to assess the accuracy and reliability of a company's financial statements, as well as to identify potential risks and areas for improvement. Among all auditors in the world, Big Four firms (Deloitte, PwC, EY, and KPMG) are usually considered to be more expertise than non-Big 4 firms due to their extensive global networks, significant presence in multiple countries, heavy investment in training and development programs for their staff as well as great investment in technology and innovation. (3) Potential legal and reputational risk: If a material misstatement is later discovered in the financial statements, the auditors may be held liable for any losses suffered by investors or other stakeholders. Meanwhile, if an auditor's work is called into question or their reputation is damaged, it can be difficult for them to attract new clients or retain existing ones. An adverse opinion on internal control over financial reporting (ICFR) could be an indicator of potential legal and reputational higher risk for auditors.
 
+In this project, we explore what are the key factors to determine audit fees because audit fees are important both for companies and auditors. For companies, predicting audit fees can help companies compare the cost of their audit with other companies in the same industry to assess their competitive position and identify opportunities for cost savings. For auditors, this research question could help them have a better audit fees negotiation process. A good reference of audit fees could on one hand help them ensure that their fees are reasonable and proportionate to the work performed, which can help to maintain the integrity of the audit profession, on the other hand, help auditors to assess their competitive position in the market.
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 # loaded the needed packages and read the data
 library(ggplot2)
@@ -28,7 +31,6 @@ df <- read.csv("https://raw.githubusercontent.com/haokunz/Data_mining_project/ma
                header = TRUE)
 
 ```
-
 
 
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
@@ -403,6 +405,7 @@ However, we know that we can't just use R-square to assess the model performance
 
 
 ```
+# Conclusion
 
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 
@@ -435,3 +438,5 @@ However, we know that we can't just use R-square to assess the model performance
 
 
 ```
+Appendix:
+The auditor’s report on internal controls over financial reporting (ICFR) is one of the few publicly observable ways for auditors to disclose unfavorable audit findings. Companies listed on U.S. stock exchanges with market capitalizations greater than $75 million must secure an independent audit opinion on ICFR under the Section 404(b) of the Sarbanes-Oxley Act of 2002, as amended by the Dodd-Frank Act of 2010. ICFR is the processes that ensure reliable financial reporting. Thus, while the auditor’s opinion on the financial statements covers the product of financial reporting, the ICFR audit covers the processes that generate financial reports. The distinction is important because nearly every U.S. public company receives an unqualified (i.e., clean) audit opinion on its financial statements as the U.S. Securities and Exchange Commission (SEC) will not allow companies to trade on a stock exchange unless they correct any material errors the auditor detects in the financial statements. However, even if the audit opinion on the financial statements is clean, companies can still get an adverse audit opinion on ICFR if the auditor concludes that the company’s internal controls over financial reporting are subject to one or more material weaknesses. An adverse opinion on ICFR indicates that the auditor believes that there are significant deficiencies in the company's internal controls that could potentially lead to material misstatements in the financial statements, which means that the auditor does not have confidence in the reliability of the company's financial reporting processes. Therefore, when auditors issue an adverse opinion on ICFR, auditors need to spend additional time, effort, and expertise required to mitigate the risk which could lead to material financial misstatements.
