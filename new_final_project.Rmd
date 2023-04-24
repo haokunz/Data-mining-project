@@ -1,12 +1,14 @@
 ---
 title: "Data Mining Final Project"
-author: "Haokun Zhang, Zhang Lu, Jonathan"
+author: "Haokun Zhang, Lu Zhang, Jyun-Yu Cheng"
 date: '2023/04/21'
-output: bookdown::pdf_document2
+output: 
+  pdf_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
 ```
 # Introduction:
 Companies listed on U.S. stock exchanges are required by law to have their financial statements audited by an independent auditor. This requirement is designed to provide assurance to stakeholders, such as investors, creditors, and regulators, that the company's financial statements are presented fairly and accurately in accordance with accounting standards and can help to build trust and confidence in the company. An audit fee then is necessary to be paid to the independent auditor for their services in conducting the audit of the company's financial statements. The audit fee is typically paid annually and covers the cost of the auditor's time, expertise and resources required to conduct the audit as well as potential legal and reputational risks associated with the audit.
@@ -146,9 +148,10 @@ Table 1: Variable Descriptions
 |five_category_factor   |Transformation of properties of five_category variables|
 |state_region  |Transformation of properties of state_region variables|
 
+\flushleft
 We examine the characteristics of these variables and summarize them in the figures below:
 
-```{r fig1, fig.cap="Effect of normalization on variables related to fee", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE, fig.cap="Variable Transformation", fig.align='default'}
 # use eight plots to display the effect of transformation on fee related variables
 par(mfrow = c(2, 4))
 hist(df3$audit_fees, breaks="Scott", main="audit fees", xlab="Audit fees")
@@ -164,24 +167,8 @@ par(mfrow = c(1, 1))
 \flushleft
 Figure 1 provides 4 2X2 panels about pre-transformation versus post-transformation of distribution of the public companies from the perspective of audit fees, non-audit fees, total fees as well as market capitalization. Data distribution is very skewed before its transformation, but the post-transformation distribution  is more symmetric and normalized, which can help to improve the accuracy of following statistical analysis.
 
-```{r fig2, fig.cap="Distribution of numbers of companies in diffeerent regions", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-# Step 3. Data Visualization(EDA - Exploratory Data Analysis) 
-# basic plots, preliminary exploration #
-# plot the number distribution of companies in different regions
-company_numbers <- sort(table(df3$state_region[df3$state_region != ""]), decreasing = FALSE, na.last = NA)
 
-par(mar = c(5.1, 6.5, 4.1, 2.1))
-barplot(height=company_numbers,
-        names.arg=c("Canada", "US_NewEng", "US_Southwest", "US_Southeast",
-                    "US_Midwest", "Foreign", "US_MAtlan", "US_West"),
-        col="#69b3a2", horiz=TRUE, las = 1, main = "Num. of Companies", xlab = "numbers")
-par(mar = c(5.1, 4.1, 4.1, 2.1))
-
-```
-\flushleft
-Figure 2 shows geographical distribution of public companies on the U.S. stock exchanges. US West region has the highest number of public companies, while Canada has the least number of pubic companies on the U.S. stock exchanges.
-
-```{r fig3, fig.cap="Distribution of Categorical Variables", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+``` {r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE, fig.cap="Distribution of Categorical Variables"}
 # use three plots to display the categorical data
 par(mfrow = c(1, 3))
 barplot(table(df3$five_category_factor), ylab = "Frequency", main="Auditing company distribution")
@@ -194,41 +181,22 @@ par(mfrow = c(1, 1))
 
 ```
 \flushleft
-The first panel in Figure 3 shows that the Big 4 firms generally have the largest market share, with each of the Big 4 firms having more audit clients than all non-Big 4 audit firms. The mid panel in Figure 3 provides further evidence for aforementioned observations. Among all companies on the U.S. stock exchanges, approximately 6.25% of them have non effective internal control(i.e. receive adverse audit opinion on ICFR) in 2021 fiscal year, which is showed in the third panel in Figure 3.
+The first panel in Figure 2 shows that the Big 4 firms generally have the largest market share, with each of the Big 4 firms having more audit clients than all non-Big 4 audit firms. The mid panel in Figure 3 provides further evidence for aforementioned observations. Among all companies on the U.S. stock exchanges, approximately 6.25% of them have non effective internal control(i.e. receive adverse audit opinion on ICFR) in 2021 fiscal year, which is showed in the third panel in Figure 3.
 
-```{r fig4, fig.cap="Company Market Capitalization Based on Effective Internal Control and Auditor Type ", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-# plot the transformed company market cap, total auditing fees, and effective internal control
-sp = ggplot(df3, aes(x=market_cap_bc, y=five_category_factor,
-                     group=effective_internal_controls)) +
-     geom_point(aes(color=effective_internal_controls), size=0.9,
-                    position=position_dodge2(0.3))
 
-labels = as.vector(outer(rep("Num. of 'No'="), table(df3$effective_internal_controls,
-                                           df3$five_category_factor)[1,],
-                         paste, sep=""))
-sp + annotate(geom="text", x=rep(27.5, 5), y=seq(0.7, 4.7, 1), label= labels) 
-
-```
-\flushleft
-From the above graph, we see that the distribution of market cap of companies whose auditors are non-big 4 firms is obviously lower than whose auditors are big 4. In addition, we also find that companies whose auditors are non-big 4 firms have higher tendency of ineffective internal control. Companies having higher market cap show higher numbers of effective internal controls. 
-
-```{r fig5, fig.cap="Relationship between Total Fee and Market Capitalization", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+```{r fig.cap="Relationship between Total Fee and Market Capitalization", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 # plot the transformed company market cap vs. total auditing fees
 ggplot(df3, aes(x=market_cap_bc, y=total_fees_bc, group=five_category_factor)) +
   geom_point(aes(color=five_category_factor), size=0.9)
 
-market_fee_correlation <- cor(df3$market_cap_bc, df3$total_fees_bc)
-knitr::kable(market_fee_correlation,
-             "simple",
-             caption = "Correlation of Market Cap and Total Fee",
-             digits = 3) %>%
-  kable_styling(latex_options = c("scale_down"))
-
+corr<- cor(df3$market_cap_bc, df3$total_fees_bc)
 ```
 \flushleft
-From the Figure 5, we can see that the non-Big 4 firms are obviously on the lower left corner. This represents that market cap of the companies which are audited by the non-Big 4 is lower, and the total fee the company pay for audit is also lower. That's reasonable because the Big 4 has their brand value.
+The correlation parameter between market cap and total fee is 0.69. From the Figure 3, we can see that the non-Big 4 firms are obviously on the lower left corner. This represents that market cap of the companies which are audited by the non-Big 4 is lower, and the total fee the company pay for audit is also lower. That's reasonable because the Big 4 has their brand value.
 
-```{r fig6, fig.cap="Total fees of Different Auditor Types", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+We noticed that sometimes the original data have abnormally low audit fees (errors may be due to wrong allocation of audit fees and non-audit fees in the original data set). Since in the data set, audit fees account for a large proportion of the total fees of each public company, using total fee can represent the audit fee better. Aiming to have a more accurate analysis, we use data of total fees instead of audit fees in the following analysis, while the name of total fee is interchangeable with audit fee.
+
+```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE, fig.cap="Total Fee Comparison"}
 # plot the auditing fees
 #ggplot(df3, aes(x=five_category_factor, y=total_fees_bc)) + 
 #  geom_violin(trim=FALSE, fill="gray")+
@@ -239,15 +207,15 @@ From the Figure 5, we can see that the non-Big 4 firms are obviously on the lowe
 dp <- ggplot(df3, aes(x=five_category_factor, y=total_fees_bc, fill=five_category_factor)) + 
   geom_violin(trim=FALSE)+
   geom_boxplot(width=0.3, fill="white")+
-  labs(title="Plot of auditing fees",x="category", y = "total fees")
+  labs(title="Plot of total fees",x="category", y = "total fees")
 dp + theme_classic()
 
 ```
 \flushleft
-Figure 6 shows that generally all Big 4 firms have higher median audit fees than non-Big 4 firms. We can see that the highest audit fee is charged by one Big 4 firm, Deloitte and the lowest audit fee is also charged by another Big 4 firm PricewaterhouseCoopers LLP instead of non-Big 4 firms. Whether the auditor is one of the Big 4 firms isn't the only factor determining audit fees. Therefore, what are the key factors to determine audit fees need predictive model to explore.
+Figure 4 shows that generally all Big 4 firms have higher median total fees than non-Big 4 firms. We can see that the highest total fee is charged by one Big 4 firm, Deloitte and the lowest total fee is also charged by another Big 4 firm PricewaterhouseCoopers LLP instead of non-Big 4 firms. Whether the auditor is one of the Big 4 firms isn't the only factor determining total fees. Therefore, what are the key factors to determine total fees need predictive model to explore.
 
 # Perform a statistical test here to compare big4 vs non big4 when considering
-```{r fig7, fig.cap="Average Audit Fee Comparison Between Audit Types", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+```{r fig.cap="Average Audit Fee Comparison Between Audit Types", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE, results='hide'}
 # perform a statistical test here to compare big4 vs non big4 when considering
 # market cap as covariate 
 
@@ -263,7 +231,7 @@ plot(postHocs)
 
 ```
 \flushleft
-Figure 7 shows the Tukey's test outcome, which compares the means of audit fees of all pairwise comparisons among every Big 4 firms and non-Big 4 firms as a whole. We can see that controlling market capitalization, average audit fees difference between any pair of Big 4 firms is little while average audit fees difference between any Big 4 firms and non-Big 4 firms are statistically different. 
+Figure 5 shows the Tukey's test outcome, which compares the means of audit fees of all pairwise comparisons among every Big 4 firms and non-Big 4 firms as a whole. We can see that controlling market capitalization, average audit fees difference between any pair of Big 4 firms is little while average audit fees difference between any Big 4 firms and non-Big 4 firms are statistically different. 
 \flushleft
 Those above analysis arouse our great interests to explore what are the key factors to determine audit fees and we try to find our answers by the following steps.
 
@@ -273,7 +241,7 @@ After exploring the data set, we continued to cluster with the companies based o
 
 ## Gap Statistic for Estimating the Number of Clusters
 This method estimates a goodness of clustering measure, the "gap" statistic with a given range of number of clusters K. For each K, it compares the log value of dispersion of observations within a cluster to the estimated log value of dispersion. In this report, the maximum number of clusters to consider is 10. 
-```{r fig8, fig.cap="Gap Statistic Clustering Result", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE, results= FALSE, fig.keep='all'}
+```{r fig.cap="Gap Statistic Clustering Result", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE, results= FALSE, fig.keep='all'}
 set.seed(143) # same random values are produced each time you run the code
 pca_data = na.omit(df3[ ,c("audit_fees_bc", "total_fees_bc", "market_cap_bc",
                            "market_fee_ratio", "assets_log", "revenue_trans",
@@ -290,7 +258,7 @@ fviz_gap_stat(gap_stat)
 
 ```
 \flushleft
-As The Figure 8 suggests, the Gap statistic estimates that the optimal number of clusters is 2. 
+As The Figure 6 suggests, the Gap statistic estimates that the optimal number of clusters is 2. 
 
 ## K-means Clustering
 \flushleft
@@ -306,10 +274,10 @@ knitr::kable(clusters,
              "simple",
              caption = "Transformed Features of K-means Clustering Groups",
              digits = 3) %>%
-  kable_styling(latex_options = c("HOLD_position", "scale_down"))
+  kable_styling(latex_options = c("striped", "scale_down"))
 ```
 
-``` {r fig9, fig.cap="K-means Clustering Result of Transformed Data", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+``` {r fig.cap="K-means Clustering Result of Transformed Data", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 dd <- cbind(pca_data, cluster=km.res$cluster)
 
 km.res_2 <- kmeans(pca_data_2, 2, nstart=25) # k-means clustering
@@ -328,8 +296,8 @@ fviz_cluster(km.res, data=pca_data)
 \flushleft
 As shown in Table 3, companies in one cluster have smaller market caps and assets than companies in the other cluster. In the higher cluster, the mean asset value is \$2.2 trillion and mean market capitalization is 1.2 trillion. The lower cluster has mean value of asset worth \$0.2 trillion and 0.17 trillion market capitalization. As a result of less market capitalization, companies in the higher cluster have a mean market-fee ratio of 0.12% while companies in the other cluster has 0.06%. This cluster also has less revenue and earnings than the higher cluster. For instance, mean revenue of the higher cluster is approximately \$0.78 trillion while the mean revenue of the lower cluster is \$5.2 trillion. 
 \flushleft
-In Figure 9, The component of the first principal component accounts for 55.8% of the total variation, and the second principal component accounts for 19.4%. Together they explain 75.2% variation in the data set. The same component in Figure 10 explains 72.8% variation. The limited number of variables selected when clustering can explain this issue. Along with variables' values that are similar to each other after transformation, the same reason could explain the large area that clusters overlap each other in Figure 9. The overlapped area is smaller when the clusters are constructed with untransformed data and they are more distinctive.
-```{r fig10, fig.cap="K-means Clustering Result of Untransformed Data", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+In Figure 7, The component of the first principal component accounts for 55.8% of the total variation, and the second principal component accounts for 19.4%. Together they explain 75.2% variation in the data set. The same component in Figure 8 explains 72.8% variation. The limited number of variables selected when clustering can explain this issue. Along with variables' values that are similar to each other after transformation, the same reason could explain the large area that clusters overlap each other in Figure 9. The overlapped area is smaller when the clusters are constructed with untransformed data and they are more distinctive.
+```{r fig.cap="K-means Clustering Result of Untransformed Data", fig.align='center', warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 fviz_cluster(km.res_2, data=pca_data_2)
 ```
 \flushleft
@@ -346,33 +314,32 @@ Secondly, we used K-fold cross validation to assess the model.
 Lastly, we would consider the MAE, RMSE and R-square to decide which model has the best performance.
 
 ```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-# The preliminary feature engineering: Abandon some unimportant features
-tc <- trainControl(method="cv", number=5)
+# compare models with 5-fold cross-validation
 
-lmtotal_cv <- train(total_fees_bc ~ five_category_factor + earnings_trans + state_region + effective_internal_controls + audit_fees_bc + share_price + market_cap_bc + revenue_trans +
-                 assets_log , data=df3, na.action=na.omit,
+tc <- trainControl(method="cv", number=5)
+lm_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
+                 market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
                method="lm", trControl=tc)
 
-knntotal_cv <- train(total_fees_bc ~ five_category_factor + earnings_trans + state_region + effective_internal_controls + audit_fees_bc + share_price + market_cap_bc + revenue_trans +
-                 assets_log, data=df3, na.action=na.omit,
+knn_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
+                  market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
                 method="knn", trControl=tc, tuneLength=20)
 
-rftotal_cv <- train(total_fees_bc ~  five_category_factor + earnings_trans + state_region + effective_internal_controls + audit_fees_bc + share_price + market_cap_bc + revenue_trans +
-                 assets_log, data=df3,na.action=na.omit,
-               method="rf", trControl=tc, tuneLength=10 )
+rf_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
+                 market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
+               method="rf", trControl=tc, tuneLength=10)
 
-carttotal_cv <- train(total_fees_bc ~  five_category_factor + earnings_trans + state_region + effective_internal_controls + audit_fees_bc + share_price + market_cap_bc + revenue_trans +
-                 assets_log, data=df3,na.action=na.omit,
+cart_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
+                   market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
                  method="rpart", trControl=tc, tuneLength=10)
 
-gbmtotal_cv <- train(total_fees_bc ~  five_category_factor + earnings_trans + state_region + effective_internal_controls + audit_fees_bc + share_price + market_cap_bc + revenue_trans +
-                 assets_log, data=df3,na.action=na.omit,
+gbm_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
+                  market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
                 method="gbm", trControl=tc, tuneLength=10, verbose=FALSE)
 
-model_list_total <- list(lm = lmtotal_cv, knn = knntotal_cv, rf = rftotal_cv, cart = carttotal_cv, gbm = gbmtotal_cv)
-res_total = resamples(model_list_total) # rsample: take randomly drawn (sub)samples of the sample and calculate the statistic from that (sub)sample
-summary(res_total)
-
+model_list <- list(lm = lm_cv, knn = knn_cv, rf = rf_cv, cart = cart_cv, gbm = gbm_cv)
+res = resamples(model_list)
+summary(res)
 ## THe feature variables name
 # five_category_factor
 # earnings_trans
@@ -384,66 +351,12 @@ summary(res_total)
 # revenue_trans
 # assets_log
 ```
-|MAE 
-|---------------------------------------------|
-|Min.   1st Qu.    Median      Mean  3rd Qu.      Max. NA's
-|lm   0.1328545 0.1450611    0
-|knn  0.4811524 0.4973572    0
-|rf   0.1342660 0.1365014    0
-|cart 0.2010494 0.2050120    0
-|gbm  0.1351613 0.1371997    0         |
-|---------------------------------------------|
-|lm   0.1188522 0.1213054 0.1289166 0.1293980 |
-|---------------------------------------------|
-|knn  0.4372091 0.4535538 0.4724095 0.4683364 |
-|---------------------------------------------|
-|rf   0.1295603 0.1295813 0.1339599 0.1327738 |
-|---------------------------------------------|
-|cart 0.1790975 0.1831987 0.1856227 0.1907960 |
-|---------------------------------------------|
-|gbm  0.1244813 0.1305179 0.1312647 0.1317250 |
-|---------------------------------------------|
-
 
 \flushleft
-From the above table, we can see that linear model has the lowest MAE, Random Forest has the second lowest MAE. Gradient-Boosting model has the lowest RMSE, and Random Forest also has the second lowest RMSE.As a result, we decided to choose these 3 models initially and do the advanced feature engineering.
-```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-# Step 6 & 7: Model training and assess the model performance
-
-# compare models with 5-fold cross-validation
-## Model building and use k-fold cv(k =5)
-tc <- trainControl(method="cv", number=5)
-lm_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
-                 market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
-               method="lm", trControl=tc)
-
-# knn_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
-#                   market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
-#                 method="knn", trControl=tc, tuneLength=20)
-
-rf_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
-                 market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
-               method="rf", trControl=tc, tuneLength=10)
-
-# cart_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
-#                    market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
-#                  method="rpart", trControl=tc, tuneLength=10)
-
-gbm_cv <- train(total_fees_bc ~ five_category_factor + state_region + 
-                  market_cap_bc + assets_log + revenue_trans + earnings_trans, data=df3,
-                method="gbm", trControl=tc, tuneLength=10, verbose=FALSE)
-
-# Assess the model performance
-model_list <- list(lm = lm_cv, rf = rf_cv, gbm = gbm_cv)
-res = resamples(model_list) # rsample: take randomly drawn (sub)samples of the sample and calculate the statistic from that (sub)sample
-summary(res) # the higher is R-square is better
-
-```
+Depending on the above table, after the advanced feature engineering, we see that random forest model has the best performance, which has the lowest MAE, lowest RMSE and highest R-square. 
 \flushleft
-Depending on the above table, after the advanced feature engineering, we saw that random forest model has the best performance, which has the lowest MAE, lowest RMSE and highest R-square. 
-\flushleft
-So we chose Random Forest model to do the prediction of total auditing fee based on other variables.
-```{r fig11, fig.cap="Relationship Between Error and Number of Trees in Random Forest Model", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+So we choose Random Forest model to do the prediction of total fee based on other variables.
+```{r fig.cap="Relationship Between Error and Number of Trees in Random Forest Model", fig.align='center', warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE, results='hide'}
 # Choose the best performance model，use it to do the prediction
 # predict the total auditing fee based on other variables
 set.seed(2501)
@@ -461,17 +374,29 @@ plot(rf1)
 ## As a result, we decided to choose ntree = 200
 ```
 \flushleft
-The plot of rf1 shows out-of-bag MSE as a function of the number of trees used, We saw that when the number of tree is equal to about 200, the MSE is slowing down. So we choose number of tree = 200.
+The plot of rf1 shows out-of-bag MSE as a function of the number of trees used. When the number of tree is equal to about 200, the MSE is slowing down. So we test number of tree = 200.
 
-```{r fig12, fig.cap="Influential Variables on Total Fee ranked by IncMSE", warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+```{r fig.cap="Influential Variables on Total Fee ranked by IncMSE", fig.align='center', warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 rf1_200 <- randomForest(total_fees_bc ~ five_category_factor + state_region + 
                       market_cap_bc + assets_log + revenue_trans + earnings_trans,
                     data=data_train, ntree = 200,  importance=TRUE)
-modelr::rmse(rf1_200, data_test)
+rf1_500 <- randomForest(total_fees_bc ~ five_category_factor + state_region + 
+                      market_cap_bc + assets_log + revenue_trans + earnings_trans,
+                    data=data_train, ntree = 500,  importance=TRUE)
+
+RMSE_500 <- modelr::rmse(rf1_500, data_test)
+RMSE<-modelr::rmse(rf1_200, data_test)
+
+cat("RMSE of 200 Trees = ", RMSE, "\n")
+cat("RMSE of 500 Trees = ", RMSE_500, "\n")
 varImpPlot(rf1_200, type = 1)
 # modelr::rmse(rf1, data_test)
 # varImpPlot(rf1, type=1) ###%IncMSE(Mean Decrease Accuracy)可以得知去除這項解釋變數(X)的話，模型的準確率會減少幾%。
 rf_predict <- predict(rf1_200, data_test)
+
+rmse_comparison <- data.frame(Tree = c("200", "500"),
+                              RMSE = c(RMSE, RMSE_500))
+rmse_comparison
 
 RSQUARE = function(y_actual,y_predict){
   cor(y_actual,y_predict)^2
@@ -486,9 +411,10 @@ R2 <- RSQUARE(data_test$audit_fees_bc, rf_predict)
 # varImpPlot(rf1_200, type=1)
 ```
 \flushleft
-Then we saw the RMSE of random forest model(rf1_200) is 0.5864.
-From the industrial knowledge, the size of company and the brand of audit company are important factors of audit fee. As a result, we chose revenues, earnings, assets and market caps as the characteristics of the company. Additionally, we chose five category factor as the indicator of the brand of the audit company: 1-4 for Big 4 firms and 5 for non-Big 4 firms. Revenues_bc has the most influence on the total fees as we expected, if we delete the revenue variable, the accuracy of model will decrease about 28%. The other 5 variables: the region of the company, the market cap of the company, the asset of the company, the earnings of the company and whether the company is audited by the big 4, also have major influence on the model. 
-```{r fig13, fig.cap="Performance Evaluation of Predictive Model",warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
+Then we see the RMSE of random forest model(rf1_200) is 0.5864, which is pretty similar to that of tree=500. Choosing tree=200 could be a better choice to make the random forest model more concise.
+In the Introduction part, we analyze the complexity of public companies as well as expertise and resource of audit firms are important factors for audit fees. Thus we chose revenues, earnings, assets and market caps as the characteristics of the company in our above model. Additionally, we add five category factor as the indicator of the brand of the audit company: 1-4 for Big 4 firms and 5 for non-Big 4 firms in our above model.
+From the outcome we got, we can see that revenues_bc has the most influence on the total fees.If we delete the revenue variable, the accuracy of model will decrease about 28%. The other 5 variables: the region of the company, the market cap of the company, the asset of the company, the earnings of the company and whether the company is audited by the big 4, also have major influence on the model. 
+```{r fig.cap="Performance Evaluation of Predictive Model", fig.align='center', warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 
 # plot predicted vs. actual values
 plot(x=rf_predict, y= data_test$audit_fees_bc, xlab="Predicted Values",
@@ -502,13 +428,6 @@ legend("topleft", legend=mylabel)
 From the above figure of predict value v.s. actual value, we saw that our model has good performance. The R-square is 0.748, which means that about 75% of the variability observed in the total audit fee can be explained by the random forest model.
 However, we know that we can't just use R-square to assess the model performance. We also consider MAE and RMSE. Compare to other models, random forest model still has lowest MAE(the average absolute magnitude between the actual values and the predicted values) and RMSE(the average difference between values predicted by a model and the actual values). As a result, we can make sure that random forest model is the best performance model.
 
-```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-
-
-
-
-
-```
 # Conclusion
 Companies listed on U.S. stock exchanges hire independent auditors to audit their financial statements annually. Usually, an audit fee is paid to the auditor and covers the cost of their services. In this project, we explored and determined key factors that have critical impact on audit fee decision made by auditors, as well as predicting audit fee with several parameters. We explored the internal control data of numerous companies with market capitalization above 75 million in 2021, used unsupervised learning method and found that these companies can be clustered to two groups with distinctive features. Supervised learning method allowed us to select Random Forest model that fits the best and predicts audit fee the most accurately.
 
@@ -524,28 +443,6 @@ Any predictive model is built based on the data given to learn, so is ours. Our 
 ```
 # Citation
 1. *Audit analytics*. Audit Analytics an Ideagen solution. (n.d.). Retrieved April 23, 2023, from https://www.auditanalytics.com/0002/company-search-ic.php 
-```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
 
-
-
-
-
-```
-
-```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-
-
-
-
-
-```
-
-```{r warning=FALSE, echo=FALSE, message=FALSE, alert=FALSE}
-
-
-
-
-
-```
 # Appendix:
 The auditor’s report on internal controls over financial reporting (ICFR) is one of the few publicly observable ways for auditors to disclose unfavorable audit findings. Companies listed on U.S. stock exchanges with market capitalizations greater than $75 million must secure an independent audit opinion on ICFR under the Section 404(b) of the Sarbanes-Oxley Act of 2002, as amended by the Dodd-Frank Act of 2010. ICFR is the processes that ensure reliable financial reporting. Thus, while the auditor’s opinion on the financial statements covers the product of financial reporting, the ICFR audit covers the processes that generate financial reports. The distinction is important because nearly every U.S. public company receives an unqualified (i.e., clean) audit opinion on its financial statements as the U.S. Securities and Exchange Commission (SEC) will not allow companies to trade on a stock exchange unless they correct any material errors the auditor detects in the financial statements. However, even if the audit opinion on the financial statements is clean, companies can still get an adverse audit opinion on ICFR if the auditor concludes that the company’s internal controls over financial reporting are subject to one or more material weaknesses. An adverse opinion on ICFR indicates that the auditor believes that there are significant deficiencies in the company's internal controls that could potentially lead to material misstatements in the financial statements, which means that the auditor does not have confidence in the reliability of the company's financial reporting processes. Therefore, when auditors issue an adverse opinion on ICFR, auditors need to spend additional time, effort, and expertise required to mitigate the risk which could lead to material financial misstatements.
