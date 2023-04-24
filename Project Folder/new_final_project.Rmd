@@ -10,6 +10,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
 ```
+# Abstract
+In this project, we try to build a predictive model on how internal control affects a company's audit fee. We explore 5 models and select the most accurate model by unsupervised and supervised learning methods. At last, we find that the random forest model is the most accurate predictive model. We find that a company's revenue, whether the auditor belongs to big 4 firms, and the company's asset are the top 3 important factors affecting the decision making of audit fee. 
+
 # Introduction:
 Companies listed on U.S. stock exchanges are required by law to have their financial statements audited by an independent auditor. This requirement is designed to provide assurance to stakeholders, such as investors, creditors, and regulators, that the company's financial statements are presented fairly and accurately in accordance with accounting standards and can help to build trust and confidence in the company. An audit fee then is necessary to be paid to the independent auditor for their services in conducting the audit of the company's financial statements. The audit fee is typically paid annually and covers the cost of the auditor's time, expertise and resources required to conduct the audit as well as potential legal and reputational risks associated with the audit.
 
