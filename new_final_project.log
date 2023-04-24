@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2022.5.11)  23 APR 2023 16:10
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2022.5.11)  23 APR 2023 16:57
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -614,25 +614,17 @@ Package pdftex.def Info: new_final_project_files/figure-latex/fig8-1.pdf  used o
 
 LaTeX Warning: Reference `@' on page 9 undefined on input line 214.
 
-<new_final_project_files/figure-latex/fig9-1.pdf, id=142, 469.755pt x 325.215pt>
+[9 <./new_final_project_files/figure-latex/fig8-1.pdf>]
+<new_final_project_files/figure-latex/fig9-1.pdf, id=156, 469.755pt x 325.215pt>
 File: new_final_project_files/figure-latex/fig9-1.pdf Graphic file (type pdf)
 <use new_final_project_files/figure-latex/fig9-1.pdf>
-Package pdftex.def Info: new_final_project_files/figure-latex/fig9-1.pdf  used on input line 257.
+Package pdftex.def Info: new_final_project_files/figure-latex/fig9-1.pdf  used on input line 260.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
 
-LaTeX Warning: Reference `@' on page 9 undefined on input line 265.
+LaTeX Warning: Reference `table:table2' on page 10 undefined on input line 267.
 
-[9 <./new_final_project_files/figure-latex/fig8-1.pdf>] [10 <./new_final_project_files/figure-latex/fig9-1.pdf>]
-
-LaTeX Warning: Reference `@' on page 11 undefined on input line 267.
-
-
-LaTeX Warning: Reference `@' on page 11 undefined on input line 269.
-
-
-LaTeX Warning: Reference `@' on page 11 undefined on input line 269.
-
-<new_final_project_files/figure-latex/fig10-1.pdf, id=170, 469.755pt x 325.215pt>
+[10 <./new_final_project_files/figure-latex/fig9-1.pdf>]
+<new_final_project_files/figure-latex/fig10-1.pdf, id=173, 469.755pt x 325.215pt>
 File: new_final_project_files/figure-latex/fig10-1.pdf Graphic file (type pdf)
 <use new_final_project_files/figure-latex/fig10-1.pdf>
 Package pdftex.def Info: new_final_project_files/figure-latex/fig10-1.pdf  used on input line 273.
@@ -642,18 +634,18 @@ Overfull \hbox (522.4921pt too wide) in paragraph at lines 366--366
 []\T1/lmtt/m/n/10 ##  randomForest(formula = total_fees_bc ~ five_category_factor +      state_region + market_cap_bc + assets_log + revenue_trans +      earnings_trans, data = data_train, importance = TRUE)[] 
  []
 
-<new_final_project_files/figure-latex/unnamed-chunk-13-1.pdf, id=189, 469.755pt x 325.215pt>
+<new_final_project_files/figure-latex/unnamed-chunk-13-1.pdf, id=192, 469.755pt x 325.215pt>
 File: new_final_project_files/figure-latex/unnamed-chunk-13-1.pdf Graphic file (type pdf)
 <use new_final_project_files/figure-latex/unnamed-chunk-13-1.pdf>
 Package pdftex.def Info: new_final_project_files/figure-latex/unnamed-chunk-13-1.pdf  used on input line 368.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-[13 <./new_final_project_files/figure-latex/unnamed-chunk-13-1.pdf>]
-<new_final_project_files/figure-latex/unnamed-chunk-13-2.pdf, id=201, 469.755pt x 325.215pt>
+<new_final_project_files/figure-latex/unnamed-chunk-13-2.pdf, id=193, 469.755pt x 325.215pt>
 File: new_final_project_files/figure-latex/unnamed-chunk-13-2.pdf Graphic file (type pdf)
 <use new_final_project_files/figure-latex/unnamed-chunk-13-2.pdf>
 Package pdftex.def Info: new_final_project_files/figure-latex/unnamed-chunk-13-2.pdf  used on input line 374.
 (pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-<new_final_project_files/figure-latex/unnamed-chunk-14-1.pdf, id=202, 469.755pt x 325.215pt>
+[13 <./new_final_project_files/figure-latex/unnamed-chunk-13-1.pdf>]
+<new_final_project_files/figure-latex/unnamed-chunk-14-1.pdf, id=205, 469.755pt x 325.215pt>
 File: new_final_project_files/figure-latex/unnamed-chunk-14-1.pdf Graphic file (type pdf)
 <use new_final_project_files/figure-latex/unnamed-chunk-14-1.pdf>
 Package pdftex.def Info: new_final_project_files/figure-latex/unnamed-chunk-14-1.pdf  used on input line 380.
@@ -666,18 +658,18 @@ Package rerunfilecheck Info: File `new_final_project.out' has not changed.
 (rerunfilecheck)             Checksum: 8237DE1BCEA8906BEFDCC8965FF89A31;1753.
  ) 
 Here is how much of TeX's memory you used:
- 12797 strings out of 480260
- 208111 string characters out of 5892258
- 495489 words of memory out of 5000000
- 30424 multiletter control sequences out of 15000+600000
+ 12798 strings out of 480260
+ 208125 string characters out of 5892258
+ 496490 words of memory out of 5000000
+ 30425 multiletter control sequences out of 15000+600000
  514969 words of font info for 68 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 60i,10n,63p,1854b,469s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 60i,10n,63p,1854b,471s stack positions out of 10000i,1000n,20000p,200000b,200000s
 {c:/Users/Haokun Zhang/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}<c:/Users/Haokun Zhang/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb><c:/Users/Haokun Zhang/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb><c:/Users/Haokun Zhang/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb><c:/Users/Haokun Zhang/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb><c:/Users/Haokun Zhang/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb><c:/Users/Haokun Zhang/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on new_final_project.pdf (16 pages, 1029168 bytes).
+Output written on new_final_project.pdf (16 pages, 1029689 bytes).
 PDF statistics:
- 272 PDF objects out of 1000 (max. 8388607)
- 213 compressed objects within 3 object streams
+ 275 PDF objects out of 1000 (max. 8388607)
+ 216 compressed objects within 3 object streams
  41 named destinations out of 1000 (max. 500000)
  138 words of extra memory for PDF output out of 10000 (max. 10000000)
 
